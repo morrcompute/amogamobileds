@@ -270,6 +270,16 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: 'Open Sans',
     padding: 0,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+        outlineWidth: 0,
+        outline: 'none',
+        boxShadow: 'none',
+      } as any,
+    }),
   },
   sectionHeader: {
     flexDirection: 'row',

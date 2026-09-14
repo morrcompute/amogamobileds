@@ -8,6 +8,11 @@ import {
   type CalendarResourceItem,
   type CalendarViewMode,
 } from '../../ui/full-page-calendar';
+import {
+  CalendarAppView,
+  type CalendarTabType,
+  type CalendarTaskItem,
+} from '../../ui/calendar-app-view';
 import type { GalleryEntry } from '../../types';
 
 export {
@@ -16,6 +21,8 @@ export {
   type CalendarEventItem,
   type CalendarResourceItem,
   type CalendarViewMode,
+  type CalendarTabType,
+  type CalendarTaskItem,
 };
 
 interface CalendarKitPreviewsProps {
@@ -36,6 +43,14 @@ export function CalendarKitPreviews({ entry }: CalendarKitPreviewsProps) {
   );
 }
 
+export function CalendarAppPreview({ entry }: CalendarKitPreviewsProps) {
+  return (
+    <View style={styles.previewContainer}>
+      <CalendarAppView initialTab="today" />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   previewContainer: {
     width: '100%',
@@ -46,3 +61,4 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+

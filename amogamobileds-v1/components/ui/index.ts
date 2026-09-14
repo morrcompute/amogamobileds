@@ -58,9 +58,12 @@ export * from './preferences-drawer';
 export * from './page-header';
 export * from './full-page-map';
 export * from './full-page-calendar';
+export * from './calendar-app-view';
 export * from './video';
 export * from './view';
 export { default as app_preference_settings } from './app_preference_settings.json';
 export { default as app_preference_settings_json } from './app_preference_settings.json';
 export { default as app_profile_menu_json } from './app-profile-menu.json';
+export { default as calendar_tasks_json } from './calendar-tasks.json';
+
 

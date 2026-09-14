@@ -1,0 +1,498 @@
+[
+  {
+    "id": "task-today-1",
+    "title": "Design System Architecture Sync",
+    "description": "Cross-platform token alignment, theme variables, and calendar kit review.",
+    "tab": "today",
+    "date": "2026-09-12",
+    "startTime": "09:00 AM",
+    "endTime": "10:30 AM",
+    "category": "Design",
+    "categoryColor": "#3b82f6",
+    "priority": "High",
+    "status": "In Progress",
+    "location": "Design Studio Alpha / Virtual",
+    "completed": false,
+    "calendarViewMode": "day",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-3",
+        "name": "Alex Chen",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-today-2",
+    "title": "Client Stakeholder Roadmap Sync",
+    "description": "Review sprint deliverables and upcoming mobile features demo.",
+    "tab": "today",
+    "date": "2026-09-12",
+    "startTime": "11:00 AM",
+    "endTime": "12:15 PM",
+    "category": "Meeting",
+    "categoryColor": "#10b981",
+    "priority": "High",
+    "status": "Upcoming",
+    "location": "Zoom Room #4",
+    "completed": false,
+    "calendarViewMode": "day",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-4",
+        "name": "James Taylor",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-today-3",
+    "title": "Mobile Emulator Touch Gestures Audit",
+    "description": "Investigate swipe friction and smooth list momentum scrolling in emulator frame.",
+    "tab": "today",
+    "date": "2026-09-12",
+    "startTime": "02:00 PM",
+    "endTime": "03:30 PM",
+    "category": "Dev",
+    "categoryColor": "#8b5cf6",
+    "priority": "Medium",
+    "status": "Upcoming",
+    "location": "Device Testing Lab",
+    "completed": false,
+    "calendarViewMode": "day",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-5",
+        "name": "Priya Patel",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-today-4",
+    "title": "Daily Team Standup & Async Updates",
+    "description": "Quick check-in on PR reviews, build artifacts, and blockers.",
+    "tab": "today",
+    "date": "2026-09-12",
+    "startTime": "04:30 PM",
+    "endTime": "05:00 PM",
+    "category": "Work",
+    "categoryColor": "#f59e0b",
+    "priority": "Low",
+    "status": "Upcoming",
+    "location": "Slack Huddle",
+    "completed": true,
+    "calendarViewMode": "day",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-3",
+        "name": "Alex Chen",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-4",
+        "name": "James Taylor",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-week-1",
+    "title": "Cross-Platform Theme System Refactoring",
+    "description": "Unified HSL color token resolution across React Native and Web engines.",
+    "tab": "week",
+    "date": "2026-09-14",
+    "startTime": "10:00 AM",
+    "endTime": "12:00 PM",
+    "category": "Dev",
+    "categoryColor": "#8b5cf6",
+    "priority": "High",
+    "status": "Scheduled",
+    "location": "Main Codebase Repository",
+    "completed": false,
+    "calendarViewMode": "week",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-3",
+        "name": "Alex Chen",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-week-2",
+    "title": "Client UX Feedback & Usability Testing",
+    "description": "Observe 5 user sessions testing calendar and chat drawer interactions.",
+    "tab": "week",
+    "date": "2026-09-15",
+    "startTime": "02:00 PM",
+    "endTime": "04:30 PM",
+    "category": "Meeting",
+    "categoryColor": "#10b981",
+    "priority": "High",
+    "status": "Scheduled",
+    "location": "Usability Lab 3B",
+    "completed": false,
+    "calendarViewMode": "week",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-week-3",
+    "title": "Interactive Docs & Component Sandbox",
+    "description": "Publish updated props, code snippets, and live preview links.",
+    "tab": "week",
+    "date": "2026-09-16",
+    "startTime": "11:00 AM",
+    "endTime": "01:00 PM",
+    "category": "Design",
+    "categoryColor": "#3b82f6",
+    "priority": "Medium",
+    "status": "Scheduled",
+    "location": "Documentation Portal",
+    "completed": false,
+    "calendarViewMode": "week",
+    "attendees": [
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-week-4",
+    "title": "Quarterly Performance & Bundle Size Audit",
+    "description": "Profile web bundle chunks, tree-shaking, and lazy-loaded assets.",
+    "tab": "week",
+    "date": "2026-09-17",
+    "startTime": "03:00 PM",
+    "endTime": "05:00 PM",
+    "category": "Dev",
+    "categoryColor": "#8b5cf6",
+    "priority": "High",
+    "status": "Scheduled",
+    "location": "Engineering Bench",
+    "completed": false,
+    "calendarViewMode": "week",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-5",
+        "name": "Priya Patel",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-week-5",
+    "title": "All-Hands Org Townhall & Team Q&A",
+    "description": "Executive review, company milestones, and open employee questions.",
+    "tab": "week",
+    "date": "2026-09-18",
+    "startTime": "05:00 PM",
+    "endTime": "06:30 PM",
+    "category": "Work",
+    "categoryColor": "#f59e0b",
+    "priority": "Low",
+    "status": "Scheduled",
+    "location": "Main Auditorium & Livestream",
+    "completed": false,
+    "calendarViewMode": "week",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-4",
+        "name": "James Taylor",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-month-1",
+    "title": "Amoga DS v2.0 GA Release",
+    "description": "General Availability launch with 40+ production ready UI components.",
+    "tab": "month",
+    "date": "2026-09-24",
+    "startTime": "09:00 AM",
+    "endTime": "06:00 PM",
+    "category": "Work",
+    "categoryColor": "#f59e0b",
+    "priority": "Urgent",
+    "status": "Planned",
+    "location": "Product Release Portal",
+    "completed": false,
+    "calendarViewMode": "month",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-3",
+        "name": "Alex Chen",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-month-2",
+    "title": "Security & Penetration Testing Audit",
+    "description": "Third-party audit for authentication, tokens, and data storage safety.",
+    "tab": "month",
+    "date": "2026-09-21",
+    "startTime": "10:00 AM",
+    "endTime": "04:00 PM",
+    "category": "Dev",
+    "categoryColor": "#8b5cf6",
+    "priority": "High",
+    "status": "Planned",
+    "location": "SecOps Environment",
+    "completed": false,
+    "calendarViewMode": "month",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-5",
+        "name": "Priya Patel",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-month-3",
+    "title": "Accessibility WCAG 2.1 AAA Audit",
+    "description": "Contrast checks, screen reader testing, and keyboard navigation compliance.",
+    "tab": "month",
+    "date": "2026-09-28",
+    "startTime": "01:00 PM",
+    "endTime": "04:00 PM",
+    "category": "Design",
+    "categoryColor": "#3b82f6",
+    "priority": "Medium",
+    "status": "Planned",
+    "location": "Accessibility Lab",
+    "completed": false,
+    "calendarViewMode": "month",
+    "attendees": [
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-month-4",
+    "title": "Q4 Strategic OKR Planning Session",
+    "description": "Leadership and product alignment on fourth-quarter key results.",
+    "tab": "month",
+    "date": "2026-09-30",
+    "startTime": "09:30 AM",
+    "endTime": "01:00 PM",
+    "category": "Meeting",
+    "categoryColor": "#10b981",
+    "priority": "High",
+    "status": "Planned",
+    "location": "Executive Boardroom",
+    "completed": false,
+    "calendarViewMode": "month",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-4",
+        "name": "James Taylor",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-year-1",
+    "title": "Q3 Enterprise Platform Launch",
+    "description": "Multi-tenant workspace rollout with real-time collaboration.",
+    "tab": "year",
+    "date": "2026-09-15",
+    "startTime": "All Day",
+    "endTime": "All Day",
+    "category": "Work",
+    "categoryColor": "#f59e0b",
+    "priority": "Urgent",
+    "status": "On Track",
+    "location": "Global Production",
+    "completed": false,
+    "calendarViewMode": "agenda",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-3",
+        "name": "Alex Chen",
+        "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-year-2",
+    "title": "Automated Native Mobile APK CI/CD",
+    "description": "Zero-touch EAS and Fastlane multi-architecture build releases.",
+    "tab": "year",
+    "date": "2026-10-20",
+    "startTime": "10:00 AM",
+    "endTime": "05:00 PM",
+    "category": "Dev",
+    "categoryColor": "#8b5cf6",
+    "priority": "High",
+    "status": "Planned",
+    "location": "DevOps Pipeline",
+    "completed": false,
+    "calendarViewMode": "agenda",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-5",
+        "name": "Priya Patel",
+        "avatar": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-year-3",
+    "title": "Global Design & Developer Summit 2026",
+    "description": "Keynote presentation on React Native Web and unified design systems.",
+    "tab": "year",
+    "date": "2026-11-15",
+    "startTime": "09:00 AM",
+    "endTime": "05:00 PM",
+    "category": "Meeting",
+    "categoryColor": "#10b981",
+    "priority": "Medium",
+    "status": "Planned",
+    "location": "Moscone Convention Center / Live",
+    "completed": false,
+    "calendarViewMode": "agenda",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-2",
+        "name": "Sarah Connor",
+        "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"
+      }
+    ]
+  },
+  {
+    "id": "task-year-4",
+    "title": "Annual Performance & Strategy Review",
+    "description": "Yearly accomplishments recap, team appraisals, and 2027 vision.",
+    "tab": "year",
+    "date": "2026-12-18",
+    "startTime": "02:00 PM",
+    "endTime": "06:00 PM",
+    "category": "Work",
+    "categoryColor": "#f59e0b",
+    "priority": "High",
+    "status": "Planned",
+    "location": "Global Headquarters",
+    "completed": false,
+    "calendarViewMode": "agenda",
+    "attendees": [
+      {
+        "id": "u-1",
+        "name": "Mohammad Aman",
+        "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop"
+      },
+      {
+        "id": "u-4",
+        "name": "James Taylor",
+        "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop"
+      }
+    ]
+  }
+]

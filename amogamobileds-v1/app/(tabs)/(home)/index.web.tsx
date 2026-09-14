@@ -50,6 +50,7 @@ import {
   AppNavigationSidebar,
   AppNavigationDrawer,
   ComingSoonView,
+  CalendarAppView,
   DEFAULT_NAV_ITEMS,
   app_menu_json,
 } from '../../../components/ui';
@@ -603,11 +604,15 @@ export default function WebPlaygroundScreen() {
           </>
         ) : (
           <View style={{ flex: 1, height: '100%' }}>
-            <ComingSoonView
-              title={activeNavItem.label}
-              icon={activeNavItem.icon}
-              onGoToChat={() => setMainNavId('home')}
-            />
+            {mainNavId === 'calendar' ? (
+              <CalendarAppView />
+            ) : (
+              <ComingSoonView
+                title={activeNavItem.label}
+                icon={activeNavItem.icon}
+                onGoToChat={() => setMainNavId('home')}
+              />
+            )}
           </View>
         )}
 
@@ -1102,13 +1107,17 @@ export default function WebPlaygroundScreen() {
       </FullscreenModal>
         </>
       ) : (
-        /* ──────────────── Coming Soon View for Other Menu Items (Desktop) ──────────────── */
+        /* ──────────────── Coming Soon / Feature View for Other Menu Items (Desktop) ──────────────── */
         <View style={{ flex: 1, height: '100%', backgroundColor: canvasBg }}>
-          <ComingSoonView
-            title={activeNavItem.label}
-            icon={activeNavItem.icon}
-            onGoToChat={() => setMainNavId('home')}
-          />
+          {mainNavId === 'calendar' ? (
+            <CalendarAppView />
+          ) : (
+            <ComingSoonView
+              title={activeNavItem.label}
+              icon={activeNavItem.icon}
+              onGoToChat={() => setMainNavId('home')}
+            />
+          )}
         </View>
       )}
 

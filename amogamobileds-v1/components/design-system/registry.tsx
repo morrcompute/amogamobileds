@@ -117,7 +117,7 @@ import {
 } from './previews/AuthPreviews';
 import { PreferencesPreview } from './previews/PreferencesPreview';
 import { MapPreviews } from './previews/MapPreviews';
-import { CalendarKitPreviews } from './previews/CalendarKitPreviews';
+import { CalendarKitPreviews, CalendarAppPreview } from './previews/CalendarKitPreviews';
 
 export type ComponentCategory =
   | 'Primitives'
@@ -2864,6 +2864,26 @@ export function FullPageCalendarScreen() {
         onEventClick={(event) => console.log('Clicked event:', event)}
         onAddEvent={(event) => console.log('Added event:', event)}
       />
+    </View>
+  );
+}`,
+  },
+  {
+    id: 'page-calendar-app',
+    name: 'Calendar & Tasks App',
+    file: 'calendar-app-view.tsx',
+    category: 'Pages',
+    tag: 'PAGE',
+    description: 'Two-pane Calendar & Task manager app featuring a left sidebar with 4 tabs (Today, This Week, Month, Year), category filters, task completion toggle, and a right-pane synced Full Page Calendar with live view-mode switching.',
+    Preview: CalendarAppPreview,
+    codeSnippet: `import React from 'react';
+import { View } from 'react-native';
+import { CalendarAppView } from 'amogamobileds-v1';
+
+export function CalendarAppScreen() {
+  return (
+    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+      <CalendarAppView initialTab="today" />
     </View>
   );
 }`,
