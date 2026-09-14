@@ -50,3 +50,8 @@ Thumbs.db
 # Supabase CLI
 supabase/.temp/
 supabase/.branches/
+
+# Excluded subprojects / companion apps
+amogamobiledev1/
+amogamobiledev*/
+

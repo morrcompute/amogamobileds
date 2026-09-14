@@ -24,3 +24,4 @@ npm run ios
 
 For complete architectural documentation, how web and mobile are separated, how routing works, and step-by-step guides on adding new features safely, see:
 📖 **[Full Documentation in amogamobileds-v1/README.md](./amogamobileds-v1/README.md)**
+yes

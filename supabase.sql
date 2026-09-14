@@ -252,6 +252,13 @@ CREATE TABLE IF NOT EXISTS public.contacts (
     owner_id uuid REFERENCES public.profiles(id) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
     contact_user_id uuid REFERENCES public.profiles(id) ON UPDATE CASCADE ON DELETE CASCADE NOT NULL,
     nickname text,
+    email text,
+    user_uuid uuid,
+    name text,
+    mobile text,
+    avatar text,
+    avatar_url text,
+    status text,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
