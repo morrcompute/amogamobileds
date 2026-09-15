@@ -106,15 +106,15 @@ export function normalizeOpenRouterModel(model: string): string {
  */
 export function extractTargetName(prompt: string, defaultName = 'Mohammed Aman'): string {
   const patterns = [
-    /(?:with|for|to|user|named|name\s+is|chat\s+with)\s+([a-zA-Z\s]+?)(?=\s+(?:with|and|an|msg|message|send|saying|having|where|for|$))/i,
-    /(?:with|for|to|user|named)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i,
+    /(?:chat\s+with|conversation\s+with|with|for|to|user|named|name\s+is)\s+([a-zA-Z\s]+?)(?=\s+(?:where|with|and|an|msg|message|send|saying|says|asks|having|for|$))/i,
+    /(?:with|for|to|user|named)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
     /(?:for|name|user)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
   ];
 
   for (const pat of patterns) {
     const m = prompt.match(pat);
     if (m && m[1]?.trim()) {
-      let raw = m[1].trim().replace(/\b(an|a|the|ui|chat|card|conversation)\b/gi, '').trim();
+      let raw = m[1].trim().replace(/\b(an|a|the|ui|chat|card|conversation|full)\b/gi, '').trim();
       if (raw.length > 1) {
         return raw.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
       }
@@ -128,9 +128,14 @@ export function extractTargetName(prompt: string, defaultName = 'Mohammed Aman')
  * Extract custom message text dynamically from prompt
  */
 export function extractMessageContent(prompt: string, defaultMsg = 'Hello!'): string {
+  const quoteMatch = prompt.match(/["'“”‘’]([^"'“”‘’]+)["'“”‘’]/);
+  if (quoteMatch && quoteMatch[1]?.trim()) {
+    return quoteMatch[1].trim();
+  }
+
   const patterns = [
-    /(?:msg|message|text|send|saying|says)\s+(?:send\s+|is\s+|to\s+|as\s+)?["']?([^"'\n]+?)["']?$/i,
-    /(?:msg|message|text|send|saying|says)\s+(?:send\s+)?["']?([a-zA-Z0-9\s!.,?]+)["']?/i,
+    /(?:msg|message|text|send|saying|says|asks)\s+(?:send\s+|is\s+|to\s+|as\s+)?["']?([^"'\n]+?)["']?$/i,
+    /(?:msg|message|text|send|saying|says|asks)\s+(?:send\s+)?["']?([a-zA-Z0-9\s!.,?]+)["']?/i,
   ];
 
   for (const pat of patterns) {
@@ -147,46 +152,161 @@ export function extractMessageContent(prompt: string, defaultMsg = 'Hello!'): st
 }
 
 /**
+ * Extract full conversation details (incoming partner question & user reply) from prompt
+ */
+export function extractChatExchange(prompt: string) {
+  const partnerName = extractTargetName(prompt, 'Krishna Raju');
+  
+  // Extract all quoted strings
+  const quotes: string[] = [];
+  const quoteRegex = /["'“‘]([^"'“”‘’]+)["'”’]/g;
+  let match;
+  while ((match = quoteRegex.exec(prompt)) !== null) {
+    if (match[1]?.trim()) {
+      quotes.push(match[1].trim());
+    }
+  }
+
+  let partnerMsg = '';
+  let userMsg = '';
+
+  if (quotes.length >= 2) {
+    partnerMsg = quotes[0];
+    userMsg = quotes[1];
+  } else if (quotes.length === 1) {
+    const q = quotes[0];
+    const lowerPrompt = prompt.toLowerCase();
+    const idx = lowerPrompt.indexOf(q.toLowerCase());
+    const beforeText = idx > 0 ? lowerPrompt.substring(0, idx) : '';
+    
+    if (beforeText.includes('ask') || beforeText.includes('he ') || beforeText.includes('she ') || beforeText.includes('they ') || beforeText.includes('where')) {
+      partnerMsg = q;
+      userMsg = 'Yes, jumping on now!';
+    } else {
+      partnerMsg = 'Hey, are you free for a quick sync?';
+      userMsg = q;
+    }
+  } else {
+    // Regex matches without quotes
+    const askMatch = prompt.match(/(?:where\s+he\s+asks?|where\s+she\s+asks?|asks?|says?|saying)\s+([^,.;]+?)(?=\s+(?:and|with|i\s+send|reply|$))/i);
+    const sendMatch = prompt.match(/(?:i\s+send\s+msg|send\s+msg|msg\s+send|reply|send|msg)\s+([^,.;]+?)(?=\s+(?:with|and|$))/i);
+    
+    partnerMsg = askMatch ? askMatch[1].trim() : 'Hey, are you free for a quick sync?';
+    userMsg = sendMatch ? sendMatch[1].trim() : 'Yes, jumping on now!';
+  }
+
+  // Clean trailing punctuation or leading command words
+  partnerMsg = partnerMsg.replace(/^(?:he asks|she asks|asks|that|saying)\s+/i, '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+  userMsg = userMsg.replace(/^(?:i send msg|send msg|i send|msg)\s+/i, '').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
+  return {
+    partnerName,
+    partnerMsg: partnerMsg || 'Hey, are you free for a quick sync?',
+    userMsg: userMsg || 'Yes, jumping on now!',
+    hasTyping: /typing/i.test(prompt),
+    hasInput: /input|reply/i.test(prompt) || true,
+  };
+}
+
+/**
+ * Clean and parse JSON schema from model output
+ */
+function cleanAndParseJson(text: string): any {
+  if (!text || typeof text !== 'string') return null;
+
+  // 1. Markdown code block
+  const jsonMatch = text.match(/```(?:json|json:ui-card)?\s*([\s\S]*?)\s*```/);
+  const candidate = jsonMatch ? jsonMatch[1] : text;
+
+  // Try direct parse
+  try {
+    const p = JSON.parse(candidate.trim());
+    if (p && (p.root || p.elements || p.type)) return p;
+  } catch (_) {}
+
+  // Try extracting from outermost braces
+  const firstBrace = candidate.indexOf('{');
+  const lastBrace = candidate.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    const slice = candidate.substring(firstBrace, lastBrace + 1);
+    try {
+      const p = JSON.parse(slice);
+      if (p && (p.root || p.elements || p.type)) return p;
+    } catch (_) {}
+
+    // Clean trailing commas and common LLM syntax flaws
+    try {
+      const cleaned = slice
+        .replace(/,\s*([\]}])/g, '$1')
+        .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
+      const p = JSON.parse(cleaned);
+      if (p && (p.root || p.elements || p.type)) return p;
+    } catch (_) {}
+  }
+
+  return null;
+}
+
+/**
  * Extracts JSON UI schema from AI raw response or creates dynamic fallback
  */
 export function extractOrBuildSchema(rawText: string, promptText: string): any {
-  // 1. Try markdown code fence
-  const jsonMatch = rawText.match(/```(?:json|json:ui-card)?\s*([\s\S]*?)\s*```/);
-  if (jsonMatch && jsonMatch[1]) {
-    try {
-      const parsed = JSON.parse(jsonMatch[1]);
-      if (parsed && (parsed.root || parsed.elements || parsed.type)) {
-        return parsed;
-      }
-    } catch (_) {}
-  }
+  const parsed = cleanAndParseJson(rawText);
+  const promptLower = (promptText || '').toLowerCase();
+  const exchange = extractChatExchange(promptText);
 
-  // 2. Try raw JSON or substring with outer brackets
-  try {
-    const parsed = JSON.parse(rawText.trim());
-    if (parsed && (parsed.root || parsed.elements || parsed.type)) {
-      return parsed;
+  // If parsed schema exists
+  if (parsed && parsed.elements) {
+    // Check if user requested a conversation/chat with specific messages, but LLM missed ChatBubble elements
+    const elementTypes = Object.values(parsed.elements).map((e: any) => e?.type);
+    const hasBubbles = elementTypes.includes('ChatBubble') || elementTypes.includes('ChatMessageList');
+    const isChatRequest = promptLower.includes('chat') || promptLower.includes('conversation') || promptLower.includes('bubble') || promptLower.includes('msg') || promptLower.includes('sync');
+
+    if (isChatRequest && !hasBubbles && (parsed.root === 'chat-stack' || parsed.root === 'typing-stack' || parsed.root === 'main' || parsed.root === 'chat-flow-stack')) {
+      // Inject the requested chat bubbles
+      parsed.elements['partner-bubble'] = {
+        type: 'ChatBubble',
+        props: {
+          content: exchange.partnerMsg,
+          isOwn: false,
+          senderName: exchange.partnerName,
+          time: '03:30 PM',
+          status: 'read',
+        },
+      };
+      parsed.elements['user-bubble'] = {
+        type: 'ChatBubble',
+        props: {
+          content: exchange.userMsg,
+          isOwn: true,
+          senderName: 'You',
+          time: '03:31 PM',
+          status: 'read',
+        },
+      };
+
+      const rootObj = parsed.elements[parsed.root];
+      if (rootObj && Array.isArray(rootObj.children)) {
+        // Insert after header if header exists, else at start
+        const headerIdx = rootObj.children.findIndex((id: string) => parsed.elements[id]?.type === 'ChatHeader');
+        if (headerIdx !== -1) {
+          rootObj.children.splice(headerIdx + 1, 0, 'partner-bubble', 'user-bubble');
+        } else {
+          rootObj.children.unshift('partner-bubble', 'user-bubble');
+        }
+      }
     }
-  } catch (_) {}
 
-  const firstBrace = rawText.indexOf('{');
-  const lastBrace = rawText.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
-    try {
-      const parsed = JSON.parse(rawText.substring(firstBrace, lastBrace + 1));
-      if (parsed && (parsed.root || parsed.elements || parsed.type)) {
-        return parsed;
-      }
-    } catch (_) {}
+    return parsed;
   }
 
-  // 3. Dynamic schema fallback strictly adapted to the user's prompt text
-  const lower = promptText.toLowerCase();
-  const partnerName = extractTargetName(promptText, 'Krishna Raju');
-  const userMsg = extractMessageContent(promptText, 'Hy');
+  // Fallback Generation strictly adapted to user's prompt text
+  const partnerName = exchange.partnerName;
+  const userMsg = exchange.userMsg;
+  const partnerMsg = exchange.partnerMsg;
   const handle = '@' + partnerName.toLowerCase().replace(/\s+/g, '_');
 
-  if (lower.includes('feedback') || lower.includes('form') || lower.includes('survey')) {
+  if (promptLower.includes('feedback') || promptLower.includes('form') || promptLower.includes('survey')) {
     return {
       root: 'feedback',
       elements: {
@@ -199,7 +319,7 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         },
       },
     };
-  } else if (lower.includes('price') || lower.includes('pricing') || lower.includes('tier') || lower.includes('plan')) {
+  } else if (promptLower.includes('price') || promptLower.includes('pricing') || promptLower.includes('tier') || promptLower.includes('plan')) {
     return {
       root: 'pricing',
       elements: {
@@ -221,7 +341,7 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         },
       },
     };
-  } else if (lower.includes('stat') || lower.includes('kpi') || lower.includes('metric') || lower.includes('storage') || lower.includes('analytics')) {
+  } else if (promptLower.includes('stat') || promptLower.includes('kpi') || promptLower.includes('metric') || promptLower.includes('storage') || promptLower.includes('analytics')) {
     return {
       root: 'stats-stack',
       elements: {
@@ -242,7 +362,7 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         },
       },
     };
-  } else if (lower.includes('chat card') || lower.includes('card item') || lower.includes('chat list') || lower.includes('recent chat')) {
+  } else if (promptLower.includes('chat card') || promptLower.includes('card item') || promptLower.includes('chat list') || promptLower.includes('recent chat')) {
     return {
       root: 'chat-cards-stack',
       elements: {
@@ -256,7 +376,7 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
           props: {
             id: 'c1',
             title: partnerName,
-            lastMessage: userMsg || 'Hey! How can I assist you?',
+            lastMessage: partnerMsg || 'Hey! How can I assist you?',
             time: '02:45 PM',
             unreadCount: 2,
             onlineCount: 1,
@@ -277,49 +397,30 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         },
       },
     };
-  } else if (lower.includes('typing') || lower.includes('typing indicator')) {
-    return {
-      root: 'typing-stack',
-      elements: {
-        'typing-stack': {
-          type: 'Stack',
-          props: { direction: 'vertical', gap: 'md' },
-          children: ['header-1', 'bubble-1', 'typing-1'],
-        },
-        'header-1': {
-          type: 'ChatHeader',
-          props: {
-            title: partnerName,
-            subtitle: 'Online',
-            status: 'online',
-          },
-        },
-        'bubble-1': {
-          type: 'ChatBubble',
-          props: {
-            content: userMsg || 'Hello! Checking in on the project.',
-            isOwn: false,
-            senderName: partnerName,
-            time: '02:44 PM',
-            status: 'read',
-          },
-        },
-        'typing-1': {
-          type: 'TypingIndicator',
-          props: {
-            label: `${partnerName} is typing...`,
-          },
-        },
-      },
-    };
-  } else if (lower.includes('chat') || lower.includes('bubble') || lower.includes('conversation') || lower.includes('message')) {
+  } else if (
+    promptLower.includes('chat') ||
+    promptLower.includes('conversation') ||
+    promptLower.includes('bubble') ||
+    promptLower.includes('message') ||
+    promptLower.includes('msg') ||
+    promptLower.includes('sync') ||
+    promptLower.includes('typing')
+  ) {
+    const childrenList = ['header-1', 'msg-1', 'msg-2'];
+    if (exchange.hasTyping || promptLower.includes('typing')) {
+      childrenList.push('typing-1');
+    }
+    if (exchange.hasInput || promptLower.includes('input')) {
+      childrenList.push('input-1');
+    }
+
     return {
       root: 'chat-flow-stack',
       elements: {
         'chat-flow-stack': {
           type: 'Stack',
           props: { direction: 'vertical', gap: 'md' },
-          children: ['header-1', 'msg-1', 'msg-2', 'typing-1', 'input-1'],
+          children: childrenList,
         },
         'header-1': {
           type: 'ChatHeader',
@@ -332,20 +433,20 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         'msg-1': {
           type: 'ChatBubble',
           props: {
-            content: `Hello! Nice to connect with you.`,
+            content: partnerMsg,
             isOwn: false,
             senderName: partnerName,
-            time: '03:26 PM',
+            time: '03:30 PM',
             status: 'read',
           },
         },
         'msg-2': {
           type: 'ChatBubble',
           props: {
-            content: userMsg || 'Hy',
+            content: userMsg,
             isOwn: true,
             senderName: 'You',
-            time: '03:27 PM',
+            time: '03:31 PM',
             status: 'read',
           },
         },
@@ -453,11 +554,19 @@ You are running as model: ${mappedModel}.
 Tool mode selected: ${toolType || 'chat'}.
 
 CRITICAL INSTRUCTIONS FOR UI GENERATION:
-1. STRICT DYNAMIC PERSONALIZATION:
-   - You MUST extract and use any names, usernames, handles, and custom message text requested in the user's prompt!
-   - Example 1: If user says "generate a chat UI with Krishna Raju with msg send hy", the ChatHeader MUST have title "Krishna Raju", and the ChatBubble MUST have content "Hy".
+1. STRICT DYNAMIC PERSONALIZATION & CONVERSATION EXTRACTION:
+   - You MUST extract and use all names, custom message texts, questions, replies, and handles requested in the prompt!
+   - Full Chat Conversation Example:
+     If the user asks: "Generate a full chat conversation with Krishna Raju where he asks 'Hey, are you free for a quick sync?' and I send msg 'Yes, jumping on now!' with his typing indicator and chat input."
+     You MUST return a Stack containing in order:
+     1. "ChatHeader" -> props: { "title": "Krishna Raju", "subtitle": "Online", "status": "online" }
+     2. "ChatBubble" (Partner's question) -> props: { "content": "Hey, are you free for a quick sync?", "isOwn": false, "senderName": "Krishna Raju", "time": "03:30 PM", "status": "read" }
+     3. "ChatBubble" (User's reply) -> props: { "content": "Yes, jumping on now!", "isOwn": true, "senderName": "You", "time": "03:31 PM", "status": "read" }
+     4. "TypingIndicator" -> props: { "label": "Krishna Raju is typing..." }
+     5. "ChatInput" -> props: { "placeholder": "Reply to Krishna Raju...", "showAttachments": true, "showVoice": true, "showEmoji": true }
+
+   - Never omit requested ChatBubble messages!
    - Example 2: If user asks for a profile card for "Sarah Jenkins", the UserProfileCard MUST have name "Sarah Jenkins" and handle "@sarah_jenkins".
-   - Never output hardcoded placeholder names if the user provided specific names, messages, or details in their prompt.
 
 2. Output ONLY a valid, complete JSON schema block inside \`\`\`json ... \`\`\` code block.
 The JSON schema MUST follow this structure:
