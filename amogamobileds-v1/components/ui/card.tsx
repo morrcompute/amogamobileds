@@ -8,11 +8,12 @@ import {
   TextStyle,
   ViewProps as RNViewProps,
   ViewStyle,
+  StyleProp,
 } from 'react-native';
 
 interface CardProps extends RNViewProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Card = memo(function Card({
@@ -48,7 +49,7 @@ export const Card = memo(function Card({
 
 interface CardHeaderProps extends RNViewProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CardHeader = memo(function CardHeader({
@@ -65,7 +66,7 @@ export const CardHeader = memo(function CardHeader({
 
 interface CardTitleProps extends RNTextProps {
   children: React.ReactNode;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
 }
 
 export const CardTitle = memo(function CardTitle({
@@ -75,10 +76,11 @@ export const CardTitle = memo(function CardTitle({
 }: CardTitleProps) {
   return (
     <Text
-      variant='title'
+      weight="medium"
       style={[
         {
-          marginBottom: 4,
+          fontSize: 18,
+          lineHeight: 24,
         },
         style,
       ]}
@@ -91,7 +93,7 @@ export const CardTitle = memo(function CardTitle({
 
 interface CardDescriptionProps extends RNTextProps {
   children: React.ReactNode;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
 }
 
 export const CardDescription = memo(function CardDescription({
@@ -100,7 +102,17 @@ export const CardDescription = memo(function CardDescription({
   ...props
 }: CardDescriptionProps) {
   return (
-    <Text variant='caption' style={[style]} {...props}>
+    <Text
+      color="muted"
+      style={[
+        {
+          fontSize: 14,
+          lineHeight: 20,
+        },
+        style,
+      ]}
+      {...props}
+    >
       {children}
     </Text>
   );
@@ -108,7 +120,7 @@ export const CardDescription = memo(function CardDescription({
 
 interface CardContentProps extends RNViewProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CardContent = memo(function CardContent({
@@ -117,7 +129,7 @@ export const CardContent = memo(function CardContent({
   ...props
 }: CardContentProps) {
   return (
-    <View style={[style]} {...props}>
+    <View style={style} {...props}>
       {children}
     </View>
   );
@@ -125,7 +137,7 @@ export const CardContent = memo(function CardContent({
 
 interface CardFooterProps extends RNViewProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const CardFooter = memo(function CardFooter({
@@ -137,9 +149,9 @@ export const CardFooter = memo(function CardFooter({
     <View
       style={[
         {
-          marginTop: 16,
           flexDirection: 'row',
-          gap: 8,
+          alignItems: 'center',
+          paddingTop: 16,
         },
         style,
       ]}

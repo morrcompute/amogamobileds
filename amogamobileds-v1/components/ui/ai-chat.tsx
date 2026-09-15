@@ -12,6 +12,7 @@ import {
   Modal,
   Linking,
   Clipboard,
+  Image,
 } from 'react-native';
 import {
   Sparkles,
@@ -35,12 +36,18 @@ import {
   Bot,
   User,
   Zap,
+  Globe,
+  ImageIcon,
+  Compass,
+  Layers,
+  Eye,
 } from 'lucide-react-native';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import {
   streamAiChat,
   getStoredAiSettings,
   saveAiSettings,
+  searchWithTavily,
   ChatMessage,
   AiSettings,
 } from '../../lib/ai-service';
@@ -124,6 +131,449 @@ const typingStyles = StyleSheet.create({
     borderRadius: 3.5,
   },
 });
+
+// ---------------------------------------------------------------------------
+// Formatted Markdown Message Renderer (Clean Headings, Bullets & Sources)
+// ---------------------------------------------------------------------------
+export function FormattedMarkdownMessage({
+  content,
+  textPrimary,
+  textMuted,
+  isDark,
+}: {
+  content: string;
+  textPrimary: string;
+  textMuted: string;
+  isDark: boolean;
+}) {
+  if (!content) return null;
+
+  const lines = content.split('\n');
+
+  return (
+    <View style={{ gap: 6, width: '100%' }}>
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) {
+          return <View key={idx} style={{ height: 4 }} />;
+        }
+
+        // Main Title (e.g. "Latest News on CJP (Cockroach Janta Party):" or "### Title")
+        if (
+          trimmed.startsWith('#') ||
+          (trimmed.endsWith(':') &&
+            !trimmed.match(/^\d+\./) &&
+            !trimmed.startsWith('-') &&
+            !trimmed.startsWith('•'))
+        ) {
+          const headingText = trimmed.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+          return (
+            <Text
+              key={idx}
+              style={{
+                fontSize: 15.5,
+                fontWeight: '800',
+                color: textPrimary,
+                letterSpacing: -0.2,
+                marginTop: idx > 0 ? 8 : 0,
+                marginBottom: 2,
+              }}
+            >
+              {headingText}
+            </Text>
+          );
+        }
+
+        // Numbered Category (e.g. "1. Protest Updates:" or "**1. Protest Updates:**")
+        if (trimmed.match(/^\d+\.\s+/)) {
+          const cleaned = trimmed.replace(/\*\*/g, '');
+          return (
+            <Text
+              key={idx}
+              style={{
+                fontSize: 14,
+                fontWeight: '700',
+                color: textPrimary,
+                marginTop: 8,
+                marginBottom: 2,
+              }}
+            >
+              {cleaned}
+            </Text>
+          );
+        }
+
+        // Bullet Point (e.g. "• Text (Source: ...)" or "- Text" or "* Text")
+        if (
+          trimmed.startsWith('•') ||
+          trimmed.startsWith('- ') ||
+          trimmed.startsWith('* ')
+        ) {
+          const bulletBody = trimmed.replace(/^[•\-\*]\s*/, '').replace(/\*\*/g, '');
+
+          // Check if there's a (Source: ...) suffix
+          const sourceMatch = bulletBody.match(/\((?:Source|source):\s*([^)]+)\)$/i);
+          let mainText = bulletBody;
+          let sourceText = '';
+
+          if (sourceMatch) {
+            mainText = bulletBody.substring(0, sourceMatch.index).trim();
+            sourceText = sourceMatch[0];
+          }
+
+          return (
+            <View
+              key={idx}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-start',
+                paddingLeft: 10,
+                gap: 8,
+                marginVertical: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 2.5,
+                  backgroundColor: isDark ? '#A1A1AA' : '#71717A',
+                  marginTop: 7,
+                }}
+              />
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 13.5,
+                  lineHeight: 20,
+                  color: textPrimary,
+                }}
+              >
+                {mainText}
+                {sourceText ? (
+                  <Text style={{ color: textMuted, fontStyle: 'italic' }}>
+                    {' '}{sourceText}
+                  </Text>
+                ) : null}
+              </Text>
+            </View>
+          );
+        }
+
+        // Regular paragraph or concluding summary
+        const cleanedPara = trimmed.replace(/\*\*/g, '');
+        return (
+          <Text
+            key={idx}
+            style={{
+              fontSize: 13.5,
+              lineHeight: 20,
+              color: textPrimary,
+            }}
+          >
+            {cleanedPara}
+          </Text>
+        );
+      })}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tavily Web Search Component (Matching Exact Visuals for Sources & Images)
+// ---------------------------------------------------------------------------
+export function TavilySearchCardView({
+  result,
+  query,
+  isDark,
+}: {
+  result: any;
+  query: string;
+  isDark: boolean;
+}) {
+  const [showJson, setShowJson] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const cardBg = isDark ? '#18181B' : '#FFFFFF';
+  const borderColor = isDark ? '#27272A' : '#E2E8F0';
+  const textPrimary = isDark ? '#F4F4F5' : '#0F172A';
+  const textMuted = isDark ? '#94A3B8' : '#64748B';
+  const codeBg = isDark ? '#0B0F19' : '#F8FAFC';
+
+  const fullPayload = {
+    query: result?.query || query,
+    follow_up_questions: result?.follow_up_questions ?? null,
+    answer: result?.answer ?? null,
+    images: result?.images || [],
+    results: result?.results || [],
+    response_time: result?.response_time || result?.responseTime || 0.85,
+    request_id: result?.request_id || undefined,
+  };
+
+  const formattedJson = JSON.stringify(fullPayload, null, 2);
+
+  const handleCopy = () => {
+    Clipboard.setString(formattedJson);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const results = fullPayload.results || [];
+  const images = fullPayload.images || [];
+
+  return (
+    <View style={{ width: '100%', marginTop: 14, gap: 16 }}>
+      {/* Top JSON Inspector Pill (Discreet toggle) */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 6 }}>
+        <TouchableOpacity
+          onPress={() => setShowJson(!showJson)}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor,
+            backgroundColor: showJson ? (isDark ? '#27272A' : '#F1F5F9') : 'transparent',
+          }}
+        >
+          <Code size={11} color={textMuted} />
+          <Text style={{ fontSize: 10.5, fontWeight: '600', color: textMuted }}>
+            {showJson ? 'Hide JSON' : '<> JSON'}
+          </Text>
+        </TouchableOpacity>
+
+        {showJson && (
+          <TouchableOpacity
+            onPress={handleCopy}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 4,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor,
+              backgroundColor: 'transparent',
+            }}
+          >
+            {copied ? (
+              <CheckCheck size={11} color="#10B981" />
+            ) : (
+              <Copy size={11} color={textMuted} />
+            )}
+            <Text style={{ fontSize: 10.5, fontWeight: '600', color: copied ? '#10B981' : textMuted }}>
+              {copied ? 'Copied' : 'Copy'}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* JSON Viewer Modal / Expand */}
+      {showJson && (
+        <ScrollView
+          style={{
+            maxHeight: 280,
+            backgroundColor: codeBg,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor,
+          }}
+          contentContainerStyle={{ padding: 12 }}
+          showsVerticalScrollIndicator
+        >
+          <Text
+            style={{
+              fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+              fontSize: 11,
+              color: isDark ? '#86EFAC' : '#047857',
+              lineHeight: 16,
+            }}
+            selectable
+          >
+            {formattedJson}
+          </Text>
+        </ScrollView>
+      )}
+
+      {/* -------------------------------------------------------------
+          1. SOURCES Section (Matching Screenshot 2)
+          ------------------------------------------------------------- */}
+      {results.length > 0 && (
+        <View style={{ gap: 10, width: '100%' }}>
+          {/* Section Header: Globe Icon + SOURCES (X) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Globe size={15} color="#6366F1" />
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '800',
+                letterSpacing: 0.6,
+                color: '#6366F1',
+              }}
+            >
+              SOURCES ({results.length})
+            </Text>
+          </View>
+
+          {/* 3-Column / Responsive Grid of Source Cards */}
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: 10,
+              width: '100%',
+            }}
+          >
+            {results.map((res: any, sIdx: number) => {
+              const domain = res.url
+                ? res.url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0]
+                : 'source';
+
+              return (
+                <TouchableOpacity
+                  key={sIdx}
+                  onPress={() => res.url && Linking.openURL(res.url)}
+                  style={{
+                    flexBasis: '31.5%',
+                    minWidth: 180,
+                    flexGrow: 1,
+                    backgroundColor: cardBg,
+                    borderWidth: 1,
+                    borderColor,
+                    borderRadius: 14,
+                    padding: 12,
+                    justifyContent: 'space-between',
+                    minHeight: 105,
+                    shadowColor: '#000',
+                    shadowOpacity: isDark ? 0.2 : 0.03,
+                    shadowRadius: 6,
+                    elevation: 1,
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {/* Top Row: Favicon + Domain Name */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {res.favicon ? (
+                      <Image
+                        source={{ uri: res.favicon }}
+                        style={{ width: 15, height: 15, borderRadius: 3 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Globe size={13} color="#6366F1" />
+                    )}
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: '600',
+                        color: textPrimary,
+                        flex: 1,
+                      }}
+                    >
+                      {domain}
+                    </Text>
+                  </View>
+
+                  {/* Middle Title (2 Lines) */}
+                  <Text
+                    numberOfLines={2}
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: '600',
+                      color: textPrimary,
+                      lineHeight: 16.5,
+                      marginVertical: 6,
+                    }}
+                  >
+                    {res.title}
+                  </Text>
+
+                  {/* Bottom Row: View source ↗ (Aligned to right) */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                      gap: 4,
+                      marginTop: 2,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, color: textMuted }}>View source</Text>
+                    <ExternalLink size={11} color={textMuted} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+
+      {/* -------------------------------------------------------------
+          2. RELATED IMAGES Section (Matching Screenshot 3)
+          ------------------------------------------------------------- */}
+      {images.length > 0 && (
+        <View style={{ gap: 10, width: '100%', marginTop: 6 }}>
+          {/* Section Header: Image Icon + RELATED IMAGES (X) */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <ImageIcon size={15} color="#6366F1" />
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '800',
+                letterSpacing: 0.6,
+                color: '#6366F1',
+              }}
+            >
+              RELATED IMAGES ({images.length})
+            </Text>
+          </View>
+
+          {/* Responsive Grid of Image Cards */}
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: 10,
+              width: '100%',
+            }}
+          >
+            {images.map((imgUrl: string, imgIdx: number) => {
+              if (!imgUrl) return null;
+              return (
+                <TouchableOpacity
+                  key={imgIdx}
+                  onPress={() => Linking.openURL(imgUrl)}
+                  activeOpacity={0.8}
+                  style={{
+                    flexBasis: '22.5%',
+                    minWidth: 140,
+                    height: 100,
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor,
+                    backgroundColor: isDark ? '#27272A' : '#E2E8F0',
+                  }}
+                >
+                  <Image
+                    source={{ uri: imgUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Configs & Models (OpenRouter supported)
@@ -559,12 +1009,19 @@ export function AiChat() {
                     {/* Content Body or Typing Indicator */}
                     {isWaiting ? (
                       <TypingDots isDark={isDark} />
-                    ) : (
+                    ) : hasUiCard ? (
                       <Text style={[styles.msgBodyText, { color: text }]}>
-                        {hasUiCard
-                          ? '🎨 UI generated successfully! View and refine it in the preview panel.'
-                          : m.content}
+                        🎨 UI generated successfully! View and refine it in the preview panel.
                       </Text>
+                    ) : isUser ? (
+                      <Text style={[styles.msgBodyText, { color: text }]}>{m.content}</Text>
+                    ) : (
+                      <FormattedMarkdownMessage
+                        content={m.content}
+                        textPrimary={text}
+                        textMuted={textMuted}
+                        isDark={isDark}
+                      />
                     )}
 
                     {/* Action Button: Open Preview Panel (Matching Screenshot 3) */}
@@ -753,28 +1210,13 @@ export function AiChat() {
                           </View>
                         )}
 
-                        {/* Web Search Sources Widget */}
+                        {/* Web Search Sources & Images Widget (Tavily Flow with Preview & JSON Tabs) */}
                         {inv.toolName === 'web_search' && (
-                          <View style={[styles.searchSourcesCard, { backgroundColor: cardBg, borderColor: isDark ? '#064E3B' : '#A7F3D0' }]}>
-                            <View style={styles.searchHeader}>
-                              <Search size={14} color="#10B981" />
-                              <Text style={[styles.searchTitle, { color: text }]}>Web Sources ({inv.args?.query})</Text>
-                            </View>
-                            <View style={styles.sourceItemsList}>
-                              {(inv.result?.results || [1, 2]).map((res: any, sIdx: number) => (
-                                <TouchableOpacity
-                                  key={sIdx}
-                                  onPress={() => res.url && Linking.openURL(res.url)}
-                                  style={[styles.sourceItemRow, { borderColor: cardBorder }]}
-                                >
-                                  <ExternalLink size={13} color="#10B981" />
-                                  <Text numberOfLines={1} style={[styles.sourceTitleText, { color: text }]}>
-                                    {res.title || 'Official AI Documentation & Release Notes'}
-                                  </Text>
-                                </TouchableOpacity>
-                              ))}
-                            </View>
-                          </View>
+                          <TavilySearchCardView
+                            result={inv.result}
+                            query={inv.args?.query || ''}
+                            isDark={isDark}
+                          />
                         )}
                       </View>
                     ))}
@@ -998,6 +1440,21 @@ export function AiChat() {
                 value={settings.openAiApiKey}
                 onChangeText={(val) => setSettings((s) => ({ ...s, openAiApiKey: val }))}
                 placeholder="sk-..."
+                placeholderTextColor={textMuted}
+                secureTextEntry
+                style={[
+                  styles.modalInput,
+                  { color: text, borderColor: cardBorder },
+                  Platform.OS === 'web' && ({ outline: 'none', outlineStyle: 'none', outlineWidth: 0 } as any),
+                ]}
+              />
+
+              {/* Tavily Search Key */}
+              <Text style={[styles.fieldLabel, { color: text }]}>Tavily Search API Key (Real-time Web Search & Images)</Text>
+              <TextInput
+                value={settings.tavilyApiKey}
+                onChangeText={(val) => setSettings((s) => ({ ...s, tavilyApiKey: val }))}
+                placeholder="tvly-..."
                 placeholderTextColor={textMuted}
                 secureTextEntry
                 style={[
@@ -1346,29 +1803,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   searchSourcesCard: {
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     borderWidth: 1,
-    gap: 8,
-    marginTop: 6,
+    gap: 10,
+    marginTop: 8,
+    width: '100%',
   },
   searchHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingBottom: 4,
   },
   searchTitle: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '700',
   },
   sourceItemsList: {
-    gap: 6,
+    gap: 8,
   },
   sourceItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
   },
   sourceTitleText: {
     fontSize: 12,

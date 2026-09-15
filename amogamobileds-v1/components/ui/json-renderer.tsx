@@ -317,13 +317,20 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
 
       case 'ChatMessageList':
         return (
-          <ChatMessageList
-            key={key}
-            messages={props.messages || [
+          <ChatMessageList key={key}>
+            {(props.messages || [
               { id: '1', content: 'Hey, how is the project going?', isOwn: false, senderName: 'Aman', time: '10:00 AM' },
               { id: '2', content: 'Everything is built and styled with our mobile design system!', isOwn: true, senderName: 'You', time: '10:02 AM' },
-            ]}
-          />
+            ]).map((msg: any, i: number) => (
+              <ChatBubble
+                key={msg.id || i}
+                message={msg.content}
+                timestamp={msg.time}
+                isOwn={msg.isOwn}
+                senderName={msg.senderName}
+              />
+            ))}
+          </ChatMessageList>
         );
 
       case 'ChatLocationCard':
@@ -343,7 +350,7 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
             key={key}
             title={props.title || 'No Messages Yet'}
             description={props.description || 'Start a conversation to see your messages here.'}
-            buttonLabel={props.buttonLabel || 'Start Chat'}
+            actionLabel={props.buttonLabel || props.actionLabel || 'Start Chat'}
           />
         );
 
@@ -351,12 +358,19 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
         return (
           <ContactInfoView
             key={key}
-            name={props.name || 'Mohammed Aman'}
-            email={props.email || 'aman@example.com'}
-            initials={props.initials || 'AM'}
-            phone={props.phone || '+1 (555) 123-4567'}
-            role={props.role || 'Senior Software Engineer'}
-            avatarUrl={props.avatarUrl}
+            onClose={() => {}}
+            conversation={{
+              id: 'conv-1',
+              title: props.name || 'Mohammed Aman',
+              otherMember: {
+                full_name: props.name || 'Mohammed Aman',
+                email: props.email || 'aman@example.com',
+                avatar_url: props.avatarUrl,
+                phone: props.phone || '+1 (555) 123-4567',
+                role: props.role || 'Senior Software Engineer',
+              },
+            } as any}
+            messages={[]}
           />
         );
 
@@ -397,7 +411,7 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
             key={key}
             fileName={props.fileName || 'architecture-mockup.png'}
             fileSize={props.fileSize || '4.8 MB'}
-            progress={props.progress || 65}
+            initialProgress={props.progress || props.initialProgress || 65}
           />
         );
 
@@ -522,7 +536,7 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
             {props.label && (
               <Text style={{ fontSize: 13, fontWeight: '600', color: textPrimary }}>{props.label}</Text>
             )}
-            <Switch checked={props.checked || false} onCheckedChange={() => {}} />
+            <Switch value={props.checked ?? false} onValueChange={() => {}} />
           </View>
         );
 

@@ -656,7 +656,7 @@ export function PremiumStats({
                     <Text style={{ fontSize: 20, fontWeight: '800', color: isPos ? '#10b981' : '#ef4444' }}>{item.value}</Text>
                     <Text style={{ fontSize: 11, fontWeight: '600', color: isPos ? '#10b981' : '#ef4444' }}>{item.change} ({item.percentageChange || item.change})</Text>
                   </View>
-                  <SvgSparkline data={item.chartData} isPositive={isPos} height={50} />
+                  <SvgSparkline data={item.chartData} isPositive={Boolean(isPos)} height={50} />
                 </CardContent>
               </Card>
             );
@@ -821,7 +821,7 @@ export function PremiumStats({
             <Text style={{ fontSize: 12, fontWeight: '700', color: textPrimary }}>Resource breakdown</Text>
             <View style={{ height: 6, width: '100%', flexDirection: 'row', gap: 2, marginTop: 8, borderRadius: 9999, overflow: 'hidden' }}>
               {data.map((item, idx) => (
-                <View key={idx} style={{ height: '100%', width: `${item.percentage}%`, backgroundColor: parseColor(item.color) }} />
+                <View key={idx} style={{ height: '100%', width: `${Number(item.percentage) || 0}%` as any, backgroundColor: parseColor(item.color) }} />
               ))}
             </View>
           </View>
