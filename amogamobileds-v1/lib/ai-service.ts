@@ -496,22 +496,45 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
 }
 
 /**
- * Tavily Web Search API Client
+ * Tavily Web Search API Client (Tavily v1 / v2 Documentation Spec)
+ * Supports real-time news, articles, newspapers (Times of India, etc.), image search, and advanced grounding
  */
-export async function searchWithTavily(query: string, customApiKey?: string) {
+export async function searchWithTavily(
+  query: string,
+  customApiKey?: string,
+  options?: {
+    topic?: 'general' | 'news' | 'finance';
+    searchDepth?: 'basic' | 'advanced';
+    maxResults?: number;
+    days?: number;
+  }
+) {
   const settings = await getStoredAiSettings();
   const apiKey =
     customApiKey ||
     settings.tavilyApiKey ||
     (appAiSettingsJson as any)?.tavilyApiKey ||
     process.env.EXPO_PUBLIC_TAVILY_API_KEY ||
+    process.env.NEXT_PUBLIC_TAVILY_API_KEY ||
     process.env.TAVILY_API_KEY;
+
+  // Detect whether the query is time-sensitive/news-oriented
+  const isNewsQuery =
+    options?.topic === 'news' ||
+    /(?:latest|news|update|updates|headline|today|yesterday|live|protest|court|government|modi|cjp|parliament|election|budget|crime|sports|match|times\s+of\s+india|newspaper|article)/i.test(
+      query
+    );
+
+  const selectedTopic = options?.topic || (isNewsQuery ? 'news' : 'general');
+  const searchDepth = options?.searchDepth || 'advanced';
+  const maxResults = options?.maxResults || 8;
 
   if (!apiKey) {
     // High-quality contextual fallback sources and images when API key is pending
     return {
       query,
       answer: `Live web search for "${query}". Configure your Tavily API Key in Settings (⚙️) for direct live Tavily API results.`,
+      follow_up_questions: null,
       images: [
         'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=80',
@@ -520,45 +543,60 @@ export async function searchWithTavily(query: string, customApiKey?: string) {
       ],
       results: [
         {
-          title: `${query} - Latest Releases, Documentation & Community`,
-          url: `https://news.ycombinator.com`,
-          content: `Comprehensive overview, official repository documentation, benchmarks, and community discussions on ${query}.`,
+          id: 'fb-1',
+          title: `${query} - Latest News & In-Depth Overview`,
+          url: `https://timesofindia.indiatimes.com`,
+          content: `Live coverage, authoritative journalistic analysis, breaking headlines, and official statements on ${query}.`,
           score: 0.98,
-          publishedDate: new Date().toISOString().split('T')[0],
+          favicon: 'https://www.google.com/s2/favicons?sz=64&domain=timesofindia.indiatimes.com',
+          published_date: new Date().toISOString().split('T')[0],
         },
         {
-          title: `Modern AI Ecosystem & Framework Architecture: ${query}`,
-          url: `https://ai.meta.com/blog/`,
-          content: `In-depth technical breakdown, performance benchmarks, and production deployments for ${query}.`,
+          id: 'fb-2',
+          title: `National & Global Developments: ${query}`,
+          url: `https://economictimes.indiatimes.com`,
+          content: `Real-time updates, key stakeholder quotes, economic and institutional implications regarding ${query}.`,
           score: 0.94,
-          publishedDate: new Date().toISOString().split('T')[0],
+          favicon: 'https://www.google.com/s2/favicons?sz=64&domain=economictimes.indiatimes.com',
+          published_date: new Date().toISOString().split('T')[0],
         },
         {
-          title: `Technical Deep-Dive & Source Insights (${query})`,
-          url: `https://github.com/trending`,
-          content: `Code snippets, developer tooling, and API reference materials relevant to "${query}".`,
+          id: 'fb-3',
+          title: `Special Reports & Timeline Analysis (${query})`,
+          url: `https://thehindu.com`,
+          content: `Background context, timeline of events, and comprehensive journalistic report for "${query}".`,
           score: 0.91,
-          publishedDate: new Date().toISOString().split('T')[0],
+          favicon: 'https://www.google.com/s2/favicons?sz=64&domain=thehindu.com',
+          published_date: new Date().toISOString().split('T')[0],
         },
       ],
-      responseTime: 0.42,
+      response_time: 0.42,
     };
   }
 
   try {
+    const payload: Record<string, any> = {
+      api_key: apiKey,
+      query,
+      topic: selectedTopic,
+      search_depth: searchDepth,
+      include_images: true,
+      include_image_descriptions: true,
+      include_answer: 'advanced',
+      max_results: maxResults,
+    };
+
+    if (selectedTopic === 'news' && options?.days) {
+      payload.days = options.days;
+    }
+
     const res = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        api_key: apiKey,
-        query,
-        search_depth: 'advanced',
-        include_images: true,
-        include_answer: true,
-        max_results: 8,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -567,32 +605,49 @@ export async function searchWithTavily(query: string, customApiKey?: string) {
     }
 
     const data = await res.json();
+
+    // Parse image URLs whether strings or objects
+    const images: string[] = [];
+    if (Array.isArray(data.images)) {
+      for (const img of data.images) {
+        if (typeof img === 'string' && img.trim()) {
+          images.push(img.trim());
+        } else if (img && typeof img === 'object' && img.url) {
+          images.push(img.url);
+        }
+      }
+    }
+
+    const results = (data.results || []).map((r: any, idx: number) => {
+      let domain = 'source';
+      try {
+        if (r.url) {
+          domain = r.url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0];
+        }
+      } catch {}
+
+      return {
+        id: r.id || `res-${idx}`,
+        title: r.title || 'Web Search Result',
+        url: r.url || '#',
+        content: r.content || '',
+        score: r.score ?? null,
+        favicon:
+          r.favicon ||
+          (domain && domain !== 'source'
+            ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}`
+            : null),
+        raw_content: r.raw_content || null,
+        published_date: r.published_date || null,
+      };
+    });
+
     return {
       query: data.query || query,
       answer: data.answer || null,
       follow_up_questions: data.follow_up_questions || null,
-      images: Array.isArray(data.images)
-        ? data.images.map((img: any) => (typeof img === 'string' ? img : img?.url || ''))
-        : [],
-      results: (data.results || []).map((r: any, idx: number) => {
-        let domain = 'source';
-        try {
-          if (r.url) {
-            domain = r.url.replace(/^(?:https?:\/\/)?(?:www\.)?/i, '').split('/')[0];
-          }
-        } catch {}
-
-        return {
-          id: r.id || `res-${idx}`,
-          title: r.title || 'Web Search Result',
-          url: r.url || '#',
-          content: r.content || '',
-          score: r.score ?? null,
-          favicon: r.favicon || (domain && domain !== 'source' ? `https://www.google.com/s2/favicons?sz=64&domain=${domain}` : null),
-          raw_content: r.raw_content || null,
-          published_date: r.published_date || null,
-        };
-      }),
+      images,
+      results,
       response_time: data.response_time || 0.85,
       request_id: data.request_id || undefined,
     };
@@ -610,7 +665,7 @@ export async function searchWithTavily(query: string, customApiKey?: string) {
           url: `https://news.google.com/search?q=${encodeURIComponent(query)}`,
           content: `Real-time search results and recent news articles for "${query}".`,
           score: 0.95,
-          favicon: 'https://www.google.com/favicon.ico',
+          favicon: 'https://www.google.com/s2/favicons?sz=64&domain=news.google.com',
         },
       ],
       response_time: 0.5,

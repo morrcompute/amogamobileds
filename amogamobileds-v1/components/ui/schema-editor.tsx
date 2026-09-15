@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform } from 'react-native';
 import { Text } from './text';
 import { Card, CardContent, CardHeader, CardTitle } from './card';
 import { Button } from './button';
@@ -187,10 +187,8 @@ export function SchemaEditor({
                 padding: 14,
                 minHeight: 240,
                 textAlignVertical: 'top',
-                // @ts-ignore
-                outlineStyle: 'none',
-                outlineWidth: 0,
-              }}
+                ...(Platform.OS === 'web' ? { outline: 'none', outlineStyle: 'none' } : {}),
+              } as any}
             />
 
             {error && (

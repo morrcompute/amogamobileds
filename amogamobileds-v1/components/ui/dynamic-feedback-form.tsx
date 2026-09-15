@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { Text } from './text';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './card';
 import { Button } from './button';
@@ -201,10 +201,8 @@ export function DynamicFeedbackForm({
                 fontSize: 13,
                 minHeight: 80,
                 textAlignVertical: 'top',
-                // @ts-ignore
-                outlineStyle: 'none',
-                outlineWidth: 0,
-              }}
+                ...(Platform.OS === 'web' ? { outline: 'none', outlineStyle: 'none' } : {}),
+              } as any}
             />
           </View>
         </View>

@@ -324,8 +324,8 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
             ]).map((msg: any, i: number) => (
               <ChatBubble
                 key={msg.id || i}
-                message={msg.content}
-                timestamp={msg.time}
+                content={msg.content}
+                time={msg.time}
                 isOwn={msg.isOwn}
                 senderName={msg.senderName}
               />

@@ -76,10 +76,10 @@ export const CardTitle = memo(function CardTitle({
 }: CardTitleProps) {
   return (
     <Text
-      weight="medium"
       style={[
         {
           fontSize: 18,
+          fontWeight: '600',
           lineHeight: 24,
         },
         style,
@@ -103,11 +103,11 @@ export const CardDescription = memo(function CardDescription({
 }: CardDescriptionProps) {
   return (
     <Text
-      color="muted"
       style={[
         {
           fontSize: 14,
           lineHeight: 20,
+          color: '#64748b',
         },
         style,
       ]}
