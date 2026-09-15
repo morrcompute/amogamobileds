@@ -119,6 +119,18 @@ import { PreferencesPreview } from './previews/PreferencesPreview';
 import { MapPreviews } from './previews/MapPreviews';
 import { CalendarKitPreviews, CalendarAppPreview } from './previews/CalendarKitPreviews';
 import { AiChatPreview } from './previews/AiChatPreview';
+import {
+  JsonRendererPreview,
+  SchemaEditorPreview,
+  PremiumStatsPreview,
+  PricingCardPreview,
+  UserProfileCardPreview,
+  DynamicFeedbackFormPreview,
+  WebSearchUIPreview,
+  PromptSuggestionsPreview,
+  ToolSelectorPreview,
+  StackPreview,
+} from './previews/ChatUiRenderPreviews';
 
 export type ComponentCategory =
   | 'Primitives'
@@ -132,6 +144,7 @@ export type ComponentCategory =
   | 'Themes'
   | 'Icons'
   | 'Chat'
+  | 'Chat UI Render'
   | 'Auth'
   | 'Pages';
 
@@ -2719,7 +2732,234 @@ export function Example() {
 }`,
   },
   /* =========================================================================
-     13. AUTHENTICATION & ONBOARDING
+     13. CHAT UI RENDER (GENERATIVE UI SYSTEM)
+     ========================================================================= */
+  {
+    id: 'chat-ui-json-renderer',
+    name: 'JSON UI Renderer',
+    file: 'json-renderer.tsx',
+    category: 'Chat UI Render',
+    tag: 'GEN-UI',
+    description: 'Dynamic generative UI engine that parses structured JSON component trees (Stack, Card, StatCard, PricingCard, Button, Badge, Alert, Inputs) into live interactive mobile components.',
+    Preview: JsonRendererPreview,
+    codeSnippet: `import { JsonRenderer } from 'amogamobileds-v1';
+
+const schema = {
+  root: 'stack-root',
+  elements: {
+    'stack-root': {
+      type: 'Stack',
+      props: { direction: 'vertical', gap: 'md' },
+      children: ['stat-card', 'pricing-plan']
+    },
+    'stat-card': {
+      type: 'PremiumStats',
+      props: { variant: '01', title: 'Total Revenue', value: '$48,290.00', change: '+18.4%' }
+    },
+    'pricing-plan': {
+      type: 'PricingCard',
+      props: {
+        title: 'Pro Team',
+        price: '$49',
+        features: ['Generative UI Engine', 'Multi-Model Switcher', 'Priority SLA'],
+        popular: true
+      }
+    }
+  }
+};
+
+export function Example() {
+  return <JsonRenderer schema={schema} onAction={(action) => console.log(action)} />;
+}`,
+  },
+  {
+    id: 'chat-ui-schema-editor',
+    name: 'UI Schema Studio',
+    file: 'schema-editor.tsx',
+    category: 'Chat UI Render',
+    tag: 'STUDIO',
+    description: 'Interactive generative UI schema studio featuring a dual-mode tab switcher between Live Preview and real-time editable JSON code editor with instant validation.',
+    Preview: SchemaEditorPreview,
+    codeSnippet: `import { SchemaEditor } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <SchemaEditor
+      onSchemaChange={(newSchema) => console.log('Updated Schema:', newSchema)}
+      onAction={(action) => console.log('Triggered action:', action)}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-premium-stats',
+    name: 'Premium Stats & KPIs',
+    file: 'premium-stats.tsx',
+    category: 'Chat UI Render',
+    tag: 'STATS',
+    description: 'Rich generative KPI & metric cards ported from amoganextapp (Variants 01-15): trend badge cards, progress completion tracks, segmented cloud storage bar, and resource usage breakdown lists.',
+    Preview: PremiumStatsPreview,
+    codeSnippet: `import { PremiumStats } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <PremiumStats
+      variant="13"
+      title="Cloud Storage"
+      total={10}
+      usedLabel="GB"
+      totalLabel="GB"
+      segments={[
+        { label: 'Models', value: 4.2, color: 'indigo-500' },
+        { label: 'Assets', value: 2.1, color: 'blue-500' },
+        { label: 'Vectors', value: 1.5, color: 'violet-500' },
+      ]}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-pricing-card',
+    name: 'Pricing Cards Stack',
+    file: 'pricing-card.tsx',
+    category: 'Chat UI Render',
+    tag: 'COMMERCE',
+    description: 'Generative pricing tiers with plan badges, big price counters, checkmarked feature lists, and highlighted popular plans with action CTA triggers.',
+    Preview: PricingCardPreview,
+    codeSnippet: `import { PricingCard } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <PricingCard
+      title="Pro Plan"
+      price="$49"
+      period="/month"
+      popular={true}
+      features={['Unlimited AI Chat', 'Custom Themes', 'Cloud Sync']}
+      onSelect={() => console.log('Selected Plan')}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-user-profile',
+    name: 'Generative User Profile',
+    file: 'user-profile-card.tsx',
+    category: 'Chat UI Render',
+    tag: 'PROFILE',
+    description: 'Rich generative user profile card with avatar fallback/image, verified badge, bio description, quick metric counters (Projects, Followers, Following), and dual action buttons.',
+    Preview: UserProfileCardPreview,
+    codeSnippet: `import { UserProfileCard } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <UserProfileCard
+      name="Amoga Studio"
+      handle="@amogadev"
+      role="Lead UI Architect"
+      avatarUrl="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"
+      verified
+      onFollow={() => console.log('Followed')}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-feedback-form',
+    name: 'Dynamic Feedback Form',
+    file: 'dynamic-feedback-form.tsx',
+    category: 'Chat UI Render',
+    tag: 'FORMS',
+    description: 'Generative interactive review & feedback form with interactive star rating selector, topic category pills, input fields, and submission confirmation state.',
+    Preview: DynamicFeedbackFormPreview,
+    codeSnippet: `import { DynamicFeedbackForm } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <DynamicFeedbackForm
+      title="Rate AI Assistant"
+      onSubmit={(data) => console.log('Submitted:', data)}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-web-search',
+    name: 'Web Search Sources & Media',
+    file: 'web-search-ui.tsx',
+    category: 'Chat UI Render',
+    tag: 'SOURCES',
+    description: 'AI Search Results visual card displaying crawled source articles with domain favicons, title, domain tag, external link buttons, and an interactive Related Images Gallery with full-screen lightbox.',
+    Preview: WebSearchUIPreview,
+    codeSnippet: `import { WebSearchUI } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <WebSearchUI
+      sources={[
+        { title: 'Vercel AI SDK 4.0 Generative UI', url: 'https://sdk.vercel.ai' },
+        { title: 'Expo SDK 52 Announcement', url: 'https://expo.dev' }
+      ]}
+      images={['https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400']}
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-prompt-suggestions',
+    name: 'Prompt Suggestion Chips',
+    file: 'prompt-suggestions.tsx',
+    category: 'Chat UI Render',
+    tag: 'STARTERS',
+    description: 'Starter prompt recommendation cards with colored icon badges, category tags (Generative UI, Web Search, Chat), title, description, and click-to-prompt dispatch.',
+    Preview: PromptSuggestionsPreview,
+    codeSnippet: `import { PromptSuggestions } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <PromptSuggestions
+      onSelect={(prompt, tool) => console.log('Selected:', prompt, tool)}
+      currentTool="ui-render"
+    />
+  );
+}`,
+  },
+  {
+    id: 'chat-ui-tool-selector',
+    name: 'Tool Selector Dropdown',
+    file: 'tool-selector.tsx',
+    category: 'Chat UI Render',
+    tag: 'TOOLS',
+    description: 'Compact tool selector supporting multi-tool switching between AI Chat, Web Search, and UI Render with active indicators.',
+    Preview: ToolSelectorPreview,
+    codeSnippet: `import { ToolSelector } from 'amogamobileds-v1';
+
+export function Example() {
+  const [tool, setTool] = React.useState('ui-render');
+  return <ToolSelector tool={tool} onSelectTool={setTool} />;
+}`,
+  },
+  {
+    id: 'chat-ui-stack',
+    name: 'Stack Layout Container',
+    file: 'stack.tsx',
+    category: 'Chat UI Render',
+    tag: 'LAYOUT',
+    description: 'Flexible layout container supporting vertical and horizontal directions, gap sizing (xs, sm, md, lg, xl), alignments, and responsive wrapping for generative UI structures.',
+    Preview: StackPreview,
+    codeSnippet: `import { Stack, Badge } from 'amogamobileds-v1';
+
+export function Example() {
+  return (
+    <Stack direction="horizontal" gap="md" align="center" wrap>
+      <Badge variant="default">Primary</Badge>
+      <Badge variant="secondary">Secondary</Badge>
+    </Stack>
+  );
+}`,
+  },
+  /* =========================================================================
+     14. AUTHENTICATION & ONBOARDING
      ========================================================================= */
   {
     id: 'auth-sign-in',

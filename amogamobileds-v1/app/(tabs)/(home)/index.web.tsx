@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Command,
+  Bot,
 } from 'lucide-react-native';
 import {
   COMPONENTS,
@@ -74,6 +75,7 @@ const CATEGORY_ITEMS: CategoryConfig[] = [
   { name: 'Themes', label: 'Themes', Icon: Palette },
   { name: 'Icons', label: 'Icons', Icon: Compass },
   { name: 'Chat', label: 'Chat', Icon: MessageSquare },
+  { name: 'Chat UI Render', label: 'Chat UI Render', Icon: Bot },
   { name: 'Auth', label: 'Auth', Icon: ShieldCheck },
   { name: 'Pages', label: 'Pages', Icon: SlidersHorizontal },
 ];
