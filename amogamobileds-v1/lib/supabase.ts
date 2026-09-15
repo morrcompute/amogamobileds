@@ -19,12 +19,8 @@ if (!globalThis.crypto.subtle) {
   };
 }
 
-const supabaseUrl =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ||
-  'https://abxwugpdvhmuxoesmumq.supabase.co';
-const supabaseKey =
-  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'sb_publishable_pcCZBBKAmJwf6aWLi9JdxA_IfmQ71co';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {

@@ -1,4 +1,11 @@
+import 'web-streams-polyfill/polyfill';
+import 'text-encoding-polyfill';
+import structuredClone from '@ungap/structured-clone';
 import * as Crypto from 'expo-crypto';
+
+if (!('structuredClone' in globalThis)) {
+  (globalThis as any).structuredClone = structuredClone;
+}
 
 if (typeof globalThis.crypto !== 'object' || globalThis.crypto === null) {
   (globalThis as any).crypto = {};

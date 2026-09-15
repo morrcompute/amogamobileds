@@ -118,6 +118,7 @@ import {
 import { PreferencesPreview } from './previews/PreferencesPreview';
 import { MapPreviews } from './previews/MapPreviews';
 import { CalendarKitPreviews, CalendarAppPreview } from './previews/CalendarKitPreviews';
+import { AiChatPreview } from './previews/AiChatPreview';
 
 export type ComponentCategory =
   | 'Primitives'
@@ -2884,6 +2885,26 @@ export function CalendarAppScreen() {
   return (
     <View style={{ flex: 1, width: '100%', height: '100%' }}>
       <CalendarAppView initialTab="today" />
+    </View>
+  );
+}`,
+  },
+  {
+    id: 'page-ai-chat',
+    name: 'AI Chat',
+    file: 'ai-chat.tsx',
+    category: 'Pages',
+    tag: 'PAGE',
+    description: 'Full-featured AI Chat & reasoning application with multi-model switcher (Gemini 2.5 Flash, GPT-4o, Claude 3.5 Sonnet, DeepSeek Chat, Llama 3.3 70B), multi-tool execution (AI Chat, Web Search with source cards & images, Dynamic JSON UI Schema renderer with real-time KPI metrics, pricing tiers, star feedback form, user profile cards), prompt suggestions, voice input, and responsive mobile tabs / desktop split canvas.',
+    Preview: AiChatPreview,
+    codeSnippet: `import React from 'react';
+import { View } from 'react-native';
+import { AiChat } from 'amogamobileds-v1';
+
+export function AiChatScreen() {
+  return (
+    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+      <AiChat />
     </View>
   );
 }`,
