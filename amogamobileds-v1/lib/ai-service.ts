@@ -102,6 +102,51 @@ export function normalizeOpenRouterModel(model: string): string {
 }
 
 /**
+ * Extract person name dynamically from prompt
+ */
+export function extractTargetName(prompt: string, defaultName = 'Mohammed Aman'): string {
+  const patterns = [
+    /(?:with|for|to|user|named|name\s+is|chat\s+with)\s+([a-zA-Z\s]+?)(?=\s+(?:with|and|an|msg|message|send|saying|having|where|for|$))/i,
+    /(?:with|for|to|user|named)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+)?)/i,
+    /(?:for|name|user)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+  ];
+
+  for (const pat of patterns) {
+    const m = prompt.match(pat);
+    if (m && m[1]?.trim()) {
+      let raw = m[1].trim().replace(/\b(an|a|the|ui|chat|card|conversation)\b/gi, '').trim();
+      if (raw.length > 1) {
+        return raw.split(' ').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+    }
+  }
+
+  return defaultName;
+}
+
+/**
+ * Extract custom message text dynamically from prompt
+ */
+export function extractMessageContent(prompt: string, defaultMsg = 'Hello!'): string {
+  const patterns = [
+    /(?:msg|message|text|send|saying|says)\s+(?:send\s+|is\s+|to\s+|as\s+)?["']?([^"'\n]+?)["']?$/i,
+    /(?:msg|message|text|send|saying|says)\s+(?:send\s+)?["']?([a-zA-Z0-9\s!.,?]+)["']?/i,
+  ];
+
+  for (const pat of patterns) {
+    const m = prompt.match(pat);
+    if (m && m[1]?.trim()) {
+      let raw = m[1].trim().replace(/^(?:send|is|as|that)\s+/i, '').trim();
+      if (raw.length > 0) {
+        return raw.charAt(0).toUpperCase() + raw.slice(1);
+      }
+    }
+  }
+
+  return defaultMsg;
+}
+
+/**
  * Extracts JSON UI schema from AI raw response or creates dynamic fallback
  */
 export function extractOrBuildSchema(rawText: string, promptText: string): any {
@@ -116,7 +161,7 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
     } catch (_) {}
   }
 
-  // 2. Try raw JSON string
+  // 2. Try raw JSON or substring with outer brackets
   try {
     const parsed = JSON.parse(rawText.trim());
     if (parsed && (parsed.root || parsed.elements || parsed.type)) {
@@ -124,8 +169,23 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
     }
   } catch (_) {}
 
-  // 3. Dynamic schema fallback based on prompt keywords if offline/parsing fails
+  const firstBrace = rawText.indexOf('{');
+  const lastBrace = rawText.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const parsed = JSON.parse(rawText.substring(firstBrace, lastBrace + 1));
+      if (parsed && (parsed.root || parsed.elements || parsed.type)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+
+  // 3. Dynamic schema fallback strictly adapted to the user's prompt text
   const lower = promptText.toLowerCase();
+  const partnerName = extractTargetName(promptText, 'Krishna Raju');
+  const userMsg = extractMessageContent(promptText, 'Hy');
+  const handle = '@' + partnerName.toLowerCase().replace(/\s+/g, '_');
+
   if (lower.includes('feedback') || lower.includes('form') || lower.includes('survey')) {
     return {
       root: 'feedback',
@@ -182,12 +242,131 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
         },
       },
     };
+  } else if (lower.includes('chat card') || lower.includes('card item') || lower.includes('chat list') || lower.includes('recent chat')) {
+    return {
+      root: 'chat-cards-stack',
+      elements: {
+        'chat-cards-stack': {
+          type: 'Stack',
+          props: { direction: 'vertical', gap: 'sm' },
+          children: ['card-1', 'card-2'],
+        },
+        'card-1': {
+          type: 'ChatCardItem',
+          props: {
+            id: 'c1',
+            title: partnerName,
+            lastMessage: userMsg || 'Hey! How can I assist you?',
+            time: '02:45 PM',
+            unreadCount: 2,
+            onlineCount: 1,
+            isActive: true,
+          },
+        },
+        'card-2': {
+          type: 'ChatCardItem',
+          props: {
+            id: 'c2',
+            title: 'Core Design Team',
+            lastMessage: 'Updated the color tokens and component primitives.',
+            time: '01:15 PM',
+            unreadCount: 0,
+            membersCount: 6,
+            isGroup: true,
+          },
+        },
+      },
+    };
+  } else if (lower.includes('typing') || lower.includes('typing indicator')) {
+    return {
+      root: 'typing-stack',
+      elements: {
+        'typing-stack': {
+          type: 'Stack',
+          props: { direction: 'vertical', gap: 'md' },
+          children: ['header-1', 'bubble-1', 'typing-1'],
+        },
+        'header-1': {
+          type: 'ChatHeader',
+          props: {
+            title: partnerName,
+            subtitle: 'Online',
+            status: 'online',
+          },
+        },
+        'bubble-1': {
+          type: 'ChatBubble',
+          props: {
+            content: userMsg || 'Hello! Checking in on the project.',
+            isOwn: false,
+            senderName: partnerName,
+            time: '02:44 PM',
+            status: 'read',
+          },
+        },
+        'typing-1': {
+          type: 'TypingIndicator',
+          props: {
+            label: `${partnerName} is typing...`,
+          },
+        },
+      },
+    };
+  } else if (lower.includes('chat') || lower.includes('bubble') || lower.includes('conversation') || lower.includes('message')) {
+    return {
+      root: 'chat-flow-stack',
+      elements: {
+        'chat-flow-stack': {
+          type: 'Stack',
+          props: { direction: 'vertical', gap: 'md' },
+          children: ['header-1', 'msg-1', 'msg-2', 'typing-1', 'input-1'],
+        },
+        'header-1': {
+          type: 'ChatHeader',
+          props: {
+            title: partnerName,
+            subtitle: 'Online',
+            status: 'online',
+          },
+        },
+        'msg-1': {
+          type: 'ChatBubble',
+          props: {
+            content: `Hello! Nice to connect with you.`,
+            isOwn: false,
+            senderName: partnerName,
+            time: '03:26 PM',
+            status: 'read',
+          },
+        },
+        'msg-2': {
+          type: 'ChatBubble',
+          props: {
+            content: userMsg || 'Hy',
+            isOwn: true,
+            senderName: 'You',
+            time: '03:27 PM',
+            status: 'read',
+          },
+        },
+        'typing-1': {
+          type: 'TypingIndicator',
+          props: {
+            label: `${partnerName} is typing...`,
+          },
+        },
+        'input-1': {
+          type: 'ChatInput',
+          props: {
+            placeholder: `Reply to ${partnerName}...`,
+            showAttachments: true,
+            showVoice: true,
+            showEmoji: true,
+          },
+        },
+      },
+    };
   }
-
-  // Extract name if found in prompt
-  const nameMatch = promptText.match(/(?:for|name|user)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
-  const detectedName = nameMatch ? nameMatch[1] : 'Jane Doe';
-  const handle = '@' + detectedName.toLowerCase().replace(/\s+/g, '_');
 
   return {
     root: 'profile',
@@ -195,12 +374,12 @@ export function extractOrBuildSchema(rawText: string, promptText: string): any {
       profile: {
         type: 'UserProfileCard',
         props: {
-          name: detectedName,
+          name: partnerName,
           handle,
-          role: 'Full-Stack Developer & Designer',
+          role: 'Software Engineer & Product Architect',
           avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
-          fallback: detectedName.substring(0, 2).toUpperCase(),
-          bio: 'Crafting digital design systems and accessible user interfaces.',
+          fallback: partnerName.substring(0, 2).toUpperCase(),
+          bio: 'Building world-class generative UI component design systems.',
           location: 'San Francisco, CA',
           joined: 'Joined 2024',
           verified: true,
@@ -274,68 +453,81 @@ You are running as model: ${mappedModel}.
 Tool mode selected: ${toolType || 'chat'}.
 
 CRITICAL INSTRUCTIONS FOR UI GENERATION:
-When the user asks to build, generate, create, design, or render a UI component, form, business card, profile card, stats dashboard, pricing table, or layout (or when tool mode is 'ui-render'):
-1. Write a brief friendly intro description (1-2 sentences).
-2. Output a valid, complete JSON schema block inside \`\`\`json code block.
+1. STRICT DYNAMIC PERSONALIZATION:
+   - You MUST extract and use any names, usernames, handles, and custom message text requested in the user's prompt!
+   - Example 1: If user says "generate a chat UI with Krishna Raju with msg send hy", the ChatHeader MUST have title "Krishna Raju", and the ChatBubble MUST have content "Hy".
+   - Example 2: If user asks for a profile card for "Sarah Jenkins", the UserProfileCard MUST have name "Sarah Jenkins" and handle "@sarah_jenkins".
+   - Never output hardcoded placeholder names if the user provided specific names, messages, or details in their prompt.
+
+2. Output ONLY a valid, complete JSON schema block inside \`\`\`json ... \`\`\` code block.
 The JSON schema MUST follow this structure:
 {
   "root": "main",
   "elements": {
     "main": {
-      "type": "Stack" | "Card" | "UserProfileCard" | "DynamicFeedbackForm" | "PricingCard" | "PremiumStats" | "Form",
+      "type": "Stack" | "Card" | "ChatHeader" | "ChatBubble" | "ChatCardItem" | "TypingIndicator" | "ChatInput" | "ChatMessageList" | "ChatLocationCard" | "ChatEmptyState" | "ContactInfoView" | "ContactManager" | "GroupManager" | "UploadedFileCard" | "UserProfileCard" | "DynamicFeedbackForm" | "PricingCard" | "PremiumStats" | "Form",
       "props": { ... },
       "children": [ ... ]
     }
   }
 }
 
-AVAILABLE GENERATIVE UI COMPONENTS:
-1. "UserProfileCard" (or "BusinessCard"):
-   props: {
-     "name": "Jane Doe",
-     "handle": "@janedoe",
-     "role": "Lead Product Designer",
-     "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
-     "bio": "Crafting digital design systems and accessible user interfaces.",
-     "location": "San Francisco, CA",
-     "joined": "Joined 2024",
-     "verified": true,
-     "stats": [{ "label": "Projects", "value": 28 }, { "label": "Followers", "value": "12.4k" }, { "label": "Following", "value": 340 }]
-   }
+ALL AVAILABLE GENERATIVE UI COMPONENTS:
 
-2. "DynamicFeedbackForm" (or "FeedbackForm"):
-   props: {
-     "title": "Share Your Experience",
-     "description": "Rate our product and leave constructive suggestions."
-   }
+CHAT CATEGORY COMPONENTS:
+1. "ChatHeader":
+   props: { "title": "Mohammed Aman", "subtitle": "Online", "avatarUrl": "...", "status": "online" | "offline" | "away" | "busy", "isGroup": false, "memberCount": 5 }
 
-3. "PricingCard":
-   props: {
-     "title": "Pro Tier",
-     "description": "For high throughput scaling teams",
-     "price": "$49",
-     "period": "/month",
-     "popular": true,
-     "features": ["Unlimited AI Generation", "Multi-Model Switcher", "Priority Support"],
-     "buttonLabel": "Get Started"
-   }
+2. "ChatBubble":
+   props: { "content": "Hello! How can I help?", "isOwn": false, "senderName": "Aman", "time": "02:45 PM", "status": "read" | "delivered" | "sent", "reactions": [{ "emoji": "👍", "count": 1 }] }
 
-4. "PremiumStats":
-   props: {
-     "variant": "01" | "02" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14" | "15",
-     "title": "Metric Title",
-     "description": "Subtitle",
-     "value": "$124,500.00",
-     "change": "+18.4%",
-     "data": [...],
-     "segments": [...],
-     "used": 8.4,
-     "total": 15,
-     "usedLabel": "GB",
-     "totalLabel": "GB"
-   }
+3. "ChatCardItem":
+   props: { "id": "c1", "title": "Design Team", "lastMessage": "Reviewing new UI components", "time": "02:30 PM", "unreadCount": 2, "isGroup": true, "membersCount": 6, "isActive": true }
 
-5. "Stack", "Card", "Form", "Input", "Textarea", "Button", "Badge", "Alert", "Progress", "Separator", "Heading", "Text", "Price", "FeatureList".
+4. "TypingIndicator":
+   props: { "label": "Mohammed Aman is typing...", "avatarUrl": "..." }
+
+5. "ChatInput":
+   props: { "placeholder": "Type a message...", "showAttachments": true, "showVoice": true, "showEmoji": true }
+
+6. "ChatMessageList":
+   props: { "messages": [{ "id": "1", "content": "Hello", "isOwn": false, "senderName": "Aman", "time": "10:00 AM" }] }
+
+7. "ChatLocationCard":
+   props: { "title": "Headquarters", "address": "Market St, San Francisco, CA", "latitude": 37.7749, "longitude": -122.4194 }
+
+8. "ChatEmptyState":
+   props: { "title": "No Messages Yet", "description": "Start a new conversation", "buttonLabel": "New Message" }
+
+9. "ContactInfoView":
+   props: { "name": "Mohammed Aman", "email": "aman@example.com", "phone": "+1 555-1234", "role": "Senior Engineer" }
+
+10. "ContactManager":
+    props: { "contacts": [{ "id": "1", "name": "Aman", "email": "aman@example.com", "initials": "AM", "isEnabled": true }] }
+
+11. "GroupManager":
+    props: { "groups": [{ "id": "g1", "name": "Core Devs", "membersCount": 5, "ownerEmail": "aman@example.com", "isEnabled": true, "description": "Main dev team" }] }
+
+12. "UploadedFileCard":
+    props: { "fileName": "specs.pdf", "fileSize": "2.4 MB", "fileType": "pdf" }
+
+13. "FileUploadProgress":
+    props: { "fileName": "design.png", "fileSize": "4.8 MB", "progress": 80 }
+
+OTHER PREMIUM DESIGN SYSTEM COMPONENTS:
+14. "UserProfileCard":
+    props: { "name": "Mohammed Aman", "handle": "@aman", "role": "Software Engineer", "bio": "...", "location": "Ajmer, India", "stats": [{ "label": "Followers", "value": "1.2k" }, { "label": "Posts", "value": 45 }] }
+
+15. "DynamicFeedbackForm":
+    props: { "title": "Send Feedback", "description": "Rate our platform" }
+
+16. "PricingCard":
+    props: { "title": "Pro Plan", "price": "$49", "period": "/month", "popular": true, "features": ["..."], "buttonLabel": "Get Started" }
+
+17. "PremiumStats":
+    props: { "variant": "01", "title": "MRR", "value": "$94,320.00", "change": "+18.4%" }
+
+18. "Stack", "Card", "Form", "Input", "Textarea", "Button", "Badge", "Alert", "Progress", "Separator", "Heading", "Text", "Price", "FeatureList".
 
 Always ensure the JSON is 100% valid syntax.`;
 

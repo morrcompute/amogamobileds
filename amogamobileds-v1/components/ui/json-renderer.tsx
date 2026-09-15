@@ -17,6 +17,21 @@ import { PremiumStats } from './premium-stats';
 import { PricingCard, FeatureList } from './pricing-card';
 import { UserProfileCard } from './user-profile-card';
 import { DynamicFeedbackForm } from './dynamic-feedback-form';
+import {
+  ChatHeader,
+  ChatBubble,
+  ChatCardItem,
+  TypingIndicator,
+  ChatInput,
+  ChatMessageList,
+  ChatLocationCard,
+  ChatEmptyState,
+  ContactManager,
+  GroupManager,
+  FileUploadProgress,
+  UploadedFileCard,
+  ContactInfoView,
+} from '../chat';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { Check, Star, Sparkles, HelpCircle } from 'lucide-react-native';
 
@@ -226,6 +241,163 @@ export function JsonRenderer({ schema, onAction, borderless = false, style }: Js
             description={props.description}
             borderless={borderless}
             onSubmit={(data) => onAction && onAction('submit-feedback', data)}
+          />
+        );
+
+      case 'ChatHeader':
+        return (
+          <ChatHeader
+            key={key}
+            title={props.title || 'Mohammed Aman'}
+            subtitle={props.subtitle || 'Online'}
+            avatarUrl={props.avatarUrl}
+            status={props.status || 'online'}
+            isGroup={props.isGroup || false}
+            memberCount={props.memberCount}
+          />
+        );
+
+      case 'ChatBubble':
+        return (
+          <ChatBubble
+            key={key}
+            content={props.content || props.message || 'Hello! How can I assist you today?'}
+            isOwn={props.isOwn || props.isSender || false}
+            senderName={props.senderName || (props.isOwn ? 'You' : 'Mohammed Aman')}
+            senderAvatar={props.senderAvatar || props.avatarUrl}
+            time={props.time || props.timestamp || '02:45 PM'}
+            status={props.status || 'read'}
+            attachments={props.attachments || []}
+            location={props.location}
+            reactions={props.reactions || []}
+          />
+        );
+
+      case 'ChatCardItem':
+      case 'ChatCard':
+        return (
+          <ChatCardItem
+            key={key}
+            id={props.id || 'chat-card-1'}
+            title={props.title || props.name || 'Mohammed Aman'}
+            badgeLabel={props.badgeLabel || 'Chat'}
+            lastMessage={props.lastMessage || props.message || 'Let us review the latest UI component schema.'}
+            time={props.time || props.timestamp || '02:45 PM'}
+            unreadCount={props.unreadCount || 0}
+            onlineCount={props.onlineCount || 0}
+            membersCount={props.membersCount || 2}
+            isActive={props.isActive || false}
+            isGroup={props.isGroup || false}
+            onClick={() => onAction && onAction('select-chat', props)}
+          />
+        );
+
+      case 'TypingIndicator':
+        return (
+          <TypingIndicator
+            key={key}
+            label={props.label || 'Aman is typing...'}
+            avatarUrl={props.avatarUrl}
+          />
+        );
+
+      case 'ChatInput':
+        return (
+          <ChatInput
+            key={key}
+            value={props.value || ''}
+            placeholder={props.placeholder || 'Type a message...'}
+            onChange={() => {}}
+            onSend={() => onAction && onAction('send-message', props)}
+            showAttachments={props.showAttachments !== false}
+            showVoice={props.showVoice !== false}
+            showEmoji={props.showEmoji !== false}
+          />
+        );
+
+      case 'ChatMessageList':
+        return (
+          <ChatMessageList
+            key={key}
+            messages={props.messages || [
+              { id: '1', content: 'Hey, how is the project going?', isOwn: false, senderName: 'Aman', time: '10:00 AM' },
+              { id: '2', content: 'Everything is built and styled with our mobile design system!', isOwn: true, senderName: 'You', time: '10:02 AM' },
+            ]}
+          />
+        );
+
+      case 'ChatLocationCard':
+        return (
+          <ChatLocationCard
+            key={key}
+            title={props.title || 'San Francisco HQ'}
+            address={props.address || 'Market Street, San Francisco, CA'}
+            latitude={props.latitude || 37.7749}
+            longitude={props.longitude || -122.4194}
+          />
+        );
+
+      case 'ChatEmptyState':
+        return (
+          <ChatEmptyState
+            key={key}
+            title={props.title || 'No Messages Yet'}
+            description={props.description || 'Start a conversation to see your messages here.'}
+            buttonLabel={props.buttonLabel || 'Start Chat'}
+          />
+        );
+
+      case 'ContactInfoView':
+        return (
+          <ContactInfoView
+            key={key}
+            name={props.name || 'Mohammed Aman'}
+            email={props.email || 'aman@example.com'}
+            initials={props.initials || 'AM'}
+            phone={props.phone || '+1 (555) 123-4567'}
+            role={props.role || 'Senior Software Engineer'}
+            avatarUrl={props.avatarUrl}
+          />
+        );
+
+      case 'ContactManager':
+        return (
+          <ContactManager
+            key={key}
+            contacts={props.contacts || [
+              { id: '1', name: 'Mohammed Aman', email: 'aman@example.com', initials: 'AM', isEnabled: true },
+              { id: '2', name: 'Sarah Miller', email: 'sarah@example.com', initials: 'SM', isEnabled: true },
+            ]}
+          />
+        );
+
+      case 'GroupManager':
+        return (
+          <GroupManager
+            key={key}
+            groups={props.groups || [
+              { id: 'g1', name: 'Core Design Team', membersCount: 5, ownerEmail: 'aman@example.com', isEnabled: true, description: 'Design system discussions' },
+            ]}
+          />
+        );
+
+      case 'UploadedFileCard':
+        return (
+          <UploadedFileCard
+            key={key}
+            fileName={props.fileName || 'design-specs.pdf'}
+            fileSize={props.fileSize || '2.4 MB'}
+            fileType={props.fileType || 'pdf'}
+          />
+        );
+
+      case 'FileUploadProgress':
+        return (
+          <FileUploadProgress
+            key={key}
+            fileName={props.fileName || 'architecture-mockup.png'}
+            fileSize={props.fileSize || '4.8 MB'}
+            progress={props.progress || 65}
           />
         );
 
