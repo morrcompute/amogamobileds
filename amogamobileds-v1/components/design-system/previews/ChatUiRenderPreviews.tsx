@@ -14,6 +14,7 @@ import { PromptSuggestions } from '../../ui/prompt-suggestions';
 import { ToolSelector } from '../../ui/tool-selector';
 import { JsonRenderer } from '../../ui/json-renderer';
 import { SchemaEditor } from '../../ui/schema-editor';
+import { GenerativeUiView } from '../../ui/generative-ui-view';
 import { useColorScheme } from '../../../hooks/useColorScheme';
 import { Sparkles, Layers, Palette, RefreshCw } from 'lucide-react-native';
 
@@ -58,9 +59,9 @@ export function JsonRendererPreview() {
   return (
     <View style={{ gap: 16 }}>
       <Text variant="caption" style={{ fontWeight: '700', letterSpacing: 0.5 }}>
-        DYNAMIC JSON SCHEMA INTERPRETER
+        GENERATIVE UI WITH SEPARATE LIVE UI & JSON SCHEMA TOGGLE
       </Text>
-      <JsonRenderer schema={sampleSchema} />
+      <GenerativeUiView schema={sampleSchema} title="Enterprise Scaler & KPI Stack" />
     </View>
   );
 }

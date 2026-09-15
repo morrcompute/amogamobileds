@@ -102,6 +102,119 @@ export function normalizeOpenRouterModel(model: string): string {
 }
 
 /**
+ * Extracts JSON UI schema from AI raw response or creates dynamic fallback
+ */
+export function extractOrBuildSchema(rawText: string, promptText: string): any {
+  // 1. Try markdown code fence
+  const jsonMatch = rawText.match(/```(?:json|json:ui-card)?\s*([\s\S]*?)\s*```/);
+  if (jsonMatch && jsonMatch[1]) {
+    try {
+      const parsed = JSON.parse(jsonMatch[1]);
+      if (parsed && (parsed.root || parsed.elements || parsed.type)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+
+  // 2. Try raw JSON string
+  try {
+    const parsed = JSON.parse(rawText.trim());
+    if (parsed && (parsed.root || parsed.elements || parsed.type)) {
+      return parsed;
+    }
+  } catch (_) {}
+
+  // 3. Dynamic schema fallback based on prompt keywords if offline/parsing fails
+  const lower = promptText.toLowerCase();
+  if (lower.includes('feedback') || lower.includes('form') || lower.includes('survey')) {
+    return {
+      root: 'feedback',
+      elements: {
+        feedback: {
+          type: 'DynamicFeedbackForm',
+          props: {
+            title: 'Send Product Feedback',
+            description: 'Help us improve by rating your experience and sharing suggestions.',
+          },
+        },
+      },
+    };
+  } else if (lower.includes('price') || lower.includes('pricing') || lower.includes('tier') || lower.includes('plan')) {
+    return {
+      root: 'pricing',
+      elements: {
+        pricing: {
+          type: 'PricingCard',
+          props: {
+            title: 'Pro Plan',
+            description: 'Ideal for scaling teams & dynamic mobile systems',
+            price: '$49',
+            period: '/month',
+            popular: true,
+            features: [
+              'Unlimited Generative UI generation',
+              'Multi-Model Switcher (GPT-4o, Claude, DeepSeek)',
+              'Live Preview & JSON Export',
+            ],
+            buttonLabel: 'Get Started',
+          },
+        },
+      },
+    };
+  } else if (lower.includes('stat') || lower.includes('kpi') || lower.includes('metric') || lower.includes('storage') || lower.includes('analytics')) {
+    return {
+      root: 'stats-stack',
+      elements: {
+        'stats-stack': {
+          type: 'Stack',
+          props: { direction: 'vertical', gap: 'md' },
+          children: ['kpi-1'],
+        },
+        'kpi-1': {
+          type: 'PremiumStats',
+          props: {
+            variant: '01',
+            title: 'Monthly Recurring Revenue',
+            value: '$94,320.00',
+            change: '+18.4%',
+            timeframe: 'vs last month',
+          },
+        },
+      },
+    };
+  }
+
+  // Extract name if found in prompt
+  const nameMatch = promptText.match(/(?:for|name|user)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+  const detectedName = nameMatch ? nameMatch[1] : 'Jane Doe';
+  const handle = '@' + detectedName.toLowerCase().replace(/\s+/g, '_');
+
+  return {
+    root: 'profile',
+    elements: {
+      profile: {
+        type: 'UserProfileCard',
+        props: {
+          name: detectedName,
+          handle,
+          role: 'Full-Stack Developer & Designer',
+          avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+          fallback: detectedName.substring(0, 2).toUpperCase(),
+          bio: 'Crafting digital design systems and accessible user interfaces.',
+          location: 'San Francisco, CA',
+          joined: 'Joined 2024',
+          verified: true,
+          stats: [
+            { label: 'Followers', value: '1.2k' },
+            { label: 'Projects', value: 45 },
+          ],
+        },
+      },
+    },
+  };
+}
+
+/**
  * Universal Stream Chat Handler
  */
 export async function streamAiChat({
@@ -156,23 +269,75 @@ Please enter your **OpenRouter API Key** in **Settings (⚙️)** or in \`app_ai
     // Direct OpenRouter streaming
     const mappedModel = normalizeOpenRouterModel(model);
 
-    const systemPrompt = `You are the Amoga AI Intelligent Assistant.
+    const systemPrompt = `You are the Amoga AI Intelligent Assistant & Generative UI Engine.
 You are running as model: ${mappedModel}.
 Tool mode selected: ${toolType || 'chat'}.
 
-Guidelines:
-1. Deliver structured, clear, and elegant responses with rich markdown.
-2. If the user asks to design, build, or render a UI card or component (e.g. Profile Card, Feedback Form, KPI Metric, Pricing Table), provide a brief summary and output a JSON block in the format:
-\`\`\`json:ui-card
+CRITICAL INSTRUCTIONS FOR UI GENERATION:
+When the user asks to build, generate, create, design, or render a UI component, form, business card, profile card, stats dashboard, pricing table, or layout (or when tool mode is 'ui-render'):
+1. Write a brief friendly intro description (1-2 sentences).
+2. Output a valid, complete JSON schema block inside \`\`\`json code block.
+The JSON schema MUST follow this structure:
 {
-  "componentType": "profile-card" | "kpi-metric" | "pricing-card" | "feedback-form",
-  "title": "Component Title",
-  "subtitle": "Subtitle or role description",
-  "accentColor": "#6366F1",
-  "data": { ... }
+  "root": "main",
+  "elements": {
+    "main": {
+      "type": "Stack" | "Card" | "UserProfileCard" | "DynamicFeedbackForm" | "PricingCard" | "PremiumStats" | "Form",
+      "props": { ... },
+      "children": [ ... ]
+    }
+  }
 }
-\`\`\`
-3. If the user asks for news or web search, provide citations and source links.`;
+
+AVAILABLE GENERATIVE UI COMPONENTS:
+1. "UserProfileCard" (or "BusinessCard"):
+   props: {
+     "name": "Jane Doe",
+     "handle": "@janedoe",
+     "role": "Lead Product Designer",
+     "avatarUrl": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+     "bio": "Crafting digital design systems and accessible user interfaces.",
+     "location": "San Francisco, CA",
+     "joined": "Joined 2024",
+     "verified": true,
+     "stats": [{ "label": "Projects", "value": 28 }, { "label": "Followers", "value": "12.4k" }, { "label": "Following", "value": 340 }]
+   }
+
+2. "DynamicFeedbackForm" (or "FeedbackForm"):
+   props: {
+     "title": "Share Your Experience",
+     "description": "Rate our product and leave constructive suggestions."
+   }
+
+3. "PricingCard":
+   props: {
+     "title": "Pro Tier",
+     "description": "For high throughput scaling teams",
+     "price": "$49",
+     "period": "/month",
+     "popular": true,
+     "features": ["Unlimited AI Generation", "Multi-Model Switcher", "Priority Support"],
+     "buttonLabel": "Get Started"
+   }
+
+4. "PremiumStats":
+   props: {
+     "variant": "01" | "02" | "06" | "07" | "08" | "09" | "10" | "11" | "12" | "13" | "14" | "15",
+     "title": "Metric Title",
+     "description": "Subtitle",
+     "value": "$124,500.00",
+     "change": "+18.4%",
+     "data": [...],
+     "segments": [...],
+     "used": 8.4,
+     "total": 15,
+     "usedLabel": "GB",
+     "totalLabel": "GB"
+   }
+
+5. "Stack", "Card", "Form", "Input", "Textarea", "Button", "Badge", "Alert", "Progress", "Separator", "Heading", "Text", "Price", "FeatureList".
+
+Always ensure the JSON is 100% valid syntax.`;
 
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -213,38 +378,6 @@ Guidelines:
     const decoder = new TextDecoder();
     let done = false;
 
-    // Detect Generative UI triggers
-    if (toolType === 'ui-render' && onToolCall) {
-      const promptText = messages[messages.length - 1]?.content.toLowerCase() || '';
-      if (promptText.includes('profile')) {
-        onToolCall({
-          name: 'render_ui_card',
-          args: {
-            componentType: 'profile-card',
-            title: 'Alex Rivera',
-            subtitle: 'Lead AI Engineer & Product Architect',
-            accentColor: '#6366F1',
-            data: {
-              location: 'San Francisco, CA',
-              followers: '14.8k',
-              projects: '42',
-            },
-          },
-        });
-      } else if (promptText.includes('feedback') || promptText.includes('form')) {
-        onToolCall({
-          name: 'render_ui_card',
-          args: {
-            componentType: 'feedback-form',
-            title: 'User Experience Feedback',
-            subtitle: 'Help us improve the Amoga Design System',
-            accentColor: '#6366F1',
-            data: {},
-          },
-        });
-      }
-    }
-
     if (toolType === 'web-search' && onToolCall) {
       onToolCall({
         name: 'web_search',
@@ -264,6 +397,8 @@ Guidelines:
       });
     }
 
+    let rawAccumulated = '';
+
     while (!done && reader) {
       const { value, done: readerDone } = await reader.read();
       done = readerDone;
@@ -276,8 +411,11 @@ Guidelines:
               const json = JSON.parse(line.slice(6));
               const delta = json.choices?.[0]?.delta?.content || '';
               if (delta) {
-                accumulatedText += delta;
-                onChunk(delta, accumulatedText);
+                rawAccumulated += delta;
+                if (toolType !== 'ui-render') {
+                  accumulatedText += delta;
+                  onChunk(delta, accumulatedText);
+                }
               }
             } catch (_) {}
           }
@@ -285,7 +423,26 @@ Guidelines:
       }
     }
 
-    onFinish(accumulatedText);
+    if (toolType === 'ui-render') {
+      const promptText = messages[messages.length - 1]?.content || '';
+      const schemaToRender = extractOrBuildSchema(rawAccumulated, promptText);
+
+      if (onToolCall && schemaToRender) {
+        onToolCall({
+          name: 'render_ui_card',
+          args: {
+            schema: schemaToRender,
+            title: schemaToRender.title || 'Generated UI Schema',
+          },
+        });
+      }
+
+      const successText = '🎨 UI generated successfully! View and refine it in the preview panel.';
+      onChunk('', successText);
+      onFinish(successText);
+    } else {
+      onFinish(accumulatedText);
+    }
   } catch (err: any) {
     console.error('Error during AI streaming:', err);
     onError(err);

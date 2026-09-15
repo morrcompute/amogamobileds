@@ -17,6 +17,7 @@ export interface PricingCardProps {
   buttonLabel?: string;
   buttonVariant?: 'default' | 'outline' | 'secondary';
   onSelect?: () => void;
+  borderless?: boolean;
   style?: any;
 }
 
@@ -30,6 +31,7 @@ export function PricingCard({
   buttonLabel = 'Get Started',
   buttonVariant = 'default',
   onSelect,
+  borderless = false,
   style,
 }: PricingCardProps) {
   const theme = useColorScheme();
@@ -44,9 +46,10 @@ export function PricingCard({
   const textPrimary = isDark ? '#F8FAFC' : '#0F172A';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
-  return (
-    <Card
-      style={[
+  const Container = borderless ? View : Card;
+  const containerStyle = borderless
+    ? [{ padding: 16, width: '100%' }, style]
+    : [
         {
           backgroundColor: cardBg,
           borderColor,
@@ -56,8 +59,10 @@ export function PricingCard({
           overflow: 'hidden',
         },
         style,
-      ]}
-    >
+      ];
+
+  return (
+    <Container style={containerStyle}>
       {popular && (
         <View
           style={{
@@ -80,18 +85,18 @@ export function PricingCard({
         </View>
       )}
 
-      <CardHeader style={{ padding: 24, paddingBottom: 16 }}>
-        <CardTitle style={{ fontSize: 20, fontWeight: '800', color: textPrimary }}>
+      <View style={{ padding: borderless ? 0 : 24, paddingBottom: 16 }}>
+        <Text style={{ fontSize: 20, fontWeight: '800', color: textPrimary }}>
           {title}
-        </CardTitle>
+        </Text>
         {description && (
-          <CardDescription style={{ fontSize: 13, color: textMuted, marginTop: 4 }}>
+          <Text style={{ fontSize: 13, color: textMuted, marginTop: 4 }}>
             {description}
-          </CardDescription>
+          </Text>
         )}
-      </CardHeader>
+      </View>
 
-      <CardContent style={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+      <View style={{ paddingHorizontal: borderless ? 0 : 24, paddingBottom: borderless ? 0 : 24 }}>
         {/* Price Row */}
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 20 }}>
           <Text style={{ fontSize: 36, fontWeight: '900', color: textPrimary, letterSpacing: -1 }}>
@@ -135,8 +140,8 @@ export function PricingCard({
         >
           {buttonLabel}
         </Button>
-      </CardContent>
-    </Card>
+      </View>
+    </Container>
   );
 }
 

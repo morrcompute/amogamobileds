@@ -15,6 +15,8 @@ import { Table, TableColumn } from './table';
 import { Stack } from './stack';
 import { PremiumStats } from './premium-stats';
 import { PricingCard, FeatureList } from './pricing-card';
+import { UserProfileCard } from './user-profile-card';
+import { DynamicFeedbackForm } from './dynamic-feedback-form';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { Check, Star, Sparkles, HelpCircle } from 'lucide-react-native';
 
@@ -35,10 +37,11 @@ export interface JsonSchemaTree {
 export interface JsonRendererProps {
   schema: any;
   onAction?: (action: string, params?: any) => void;
+  borderless?: boolean;
   style?: any;
 }
 
-export function JsonRenderer({ schema, onAction, style }: JsonRendererProps) {
+export function JsonRenderer({ schema, onAction, borderless = false, style }: JsonRendererProps) {
   const theme = useColorScheme();
   const isDark = theme === 'dark';
 
@@ -92,6 +95,36 @@ export function JsonRenderer({ schema, onAction, style }: JsonRendererProps) {
         );
 
       case 'Card':
+        if (borderless) {
+          return (
+            <View
+              key={key}
+              style={{
+                width: '100%',
+                padding: 16,
+                gap: 12,
+                maxWidth: props.maxWidth === 'sm' ? 320 : props.maxWidth === 'md' ? 440 : undefined,
+                alignSelf: props.centered ? 'center' : 'auto',
+              }}
+            >
+              {(props.title || props.description) && (
+                <View style={{ marginBottom: 4 }}>
+                  {props.title && (
+                    <Text style={{ fontSize: 17, fontWeight: '800', color: textPrimary }}>
+                      {props.title}
+                    </Text>
+                  )}
+                  {props.description && (
+                    <Text style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>
+                      {props.description}
+                    </Text>
+                  )}
+                </View>
+              )}
+              {renderedChildren}
+            </View>
+          );
+        }
         return (
           <Card
             key={key}
@@ -157,7 +190,42 @@ export function JsonRenderer({ schema, onAction, style }: JsonRendererProps) {
             features={props.features || []}
             popular={props.popular || false}
             buttonLabel={props.buttonLabel || 'Get Started'}
+            borderless={borderless}
             onSelect={() => onAction && onAction('select-plan', props)}
+          />
+        );
+
+      case 'UserProfileCard':
+      case 'ProfileCard':
+      case 'BusinessCard':
+        return (
+          <UserProfileCard
+            key={key}
+            name={props.name || props.title || 'User Name'}
+            handle={props.handle || props.subtitle || '@user'}
+            role={props.role || 'Member'}
+            avatarUrl={props.avatarUrl}
+            fallback={props.fallback || 'UN'}
+            bio={props.bio || props.description}
+            location={props.location}
+            joined={props.joined}
+            verified={props.verified !== false}
+            stats={props.stats}
+            borderless={borderless}
+            onFollow={() => onAction && onAction('follow-user', props)}
+            onMessage={() => onAction && onAction('message-user', props)}
+          />
+        );
+
+      case 'DynamicFeedbackForm':
+      case 'FeedbackForm':
+        return (
+          <DynamicFeedbackForm
+            key={key}
+            title={props.title || 'Product Feedback'}
+            description={props.description}
+            borderless={borderless}
+            onSubmit={(data) => onAction && onAction('submit-feedback', data)}
           />
         );
 

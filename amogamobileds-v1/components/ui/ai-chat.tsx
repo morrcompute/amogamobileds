@@ -44,6 +44,26 @@ import {
   ChatMessage,
   AiSettings,
 } from '../../lib/ai-service';
+import { JsonRenderer } from './json-renderer';
+import { UserProfileCard } from './user-profile-card';
+import { DynamicFeedbackForm } from './dynamic-feedback-form';
+import { PricingCard } from './pricing-card';
+import { PremiumStats } from './premium-stats';
+import { GenerativeUiView } from './generative-ui-view';
+
+function extractJsonSchema(content: string): any | null {
+  if (!content) return null;
+  const match = content.match(/```(?:json|json:ui-card)?\s*([\s\S]*?)\s*```/);
+  if (match && match[1]) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && (parsed.root || parsed.type || parsed.elements || parsed.componentType)) {
+        return parsed;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // 3-Dot Typing Indicator Component
@@ -228,6 +248,7 @@ export function AiChat() {
   // Settings State
   const [settings, setSettings] = useState<AiSettings>({});
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [openPreviews, setOpenPreviews] = useState<Record<string, boolean>>({});
 
   // Form State for Generative UI
   const [userRating, setUserRating] = useState(5);
@@ -315,11 +336,9 @@ export function AiChat() {
         setMessages((prev) =>
           prev.map((msg) => {
             if (msg.id === assistantMsgId) {
-              const invocations = msg.toolInvocations || [];
               return {
                 ...msg,
                 toolInvocations: [
-                  ...invocations,
                   {
                     toolName: toolCall.name,
                     toolCallId: 'call-' + Date.now(),
@@ -500,6 +519,11 @@ export function AiChat() {
             {messages.map((m) => {
               const isUser = m.role === 'user';
               const isWaiting = !isUser && !m.content;
+              const hasUiCard =
+                !isUser &&
+                (m.toolInvocations?.some((inv) => inv.toolName === 'render_ui_card') ||
+                  Boolean(extractJsonSchema(m.content)));
+              const isPreviewOpen = openPreviews[m.id] !== false;
 
               return (
                 <View key={m.id} style={styles.chatMsgRow}>
@@ -513,23 +537,23 @@ export function AiChat() {
                             ? '#1E1B4B'
                             : '#EEF2FF'
                           : isDark
-                          ? '#2E1065'
-                          : '#F3E8FF',
+                          ? '#1E1B4B'
+                          : '#EEF2FF',
                       },
                     ]}
                   >
                     {isUser ? (
                       <User size={16} color="#6366F1" />
                     ) : (
-                      <Bot size={16} color="#8B5CF6" />
+                      <Bot size={17} color="#4F46E5" />
                     )}
                   </View>
 
                   {/* Message Content Column */}
                   <View style={styles.msgContentCol}>
                     {/* Sender Name with Clean Accent Colors */}
-                    <Text style={[styles.senderName, { color: isUser ? '#6366F1' : '#8B5CF6' }]}>
-                      {isUser ? 'You' : `${activeModelObj.name} (AI)`}
+                    <Text style={[styles.senderName, { color: isUser ? '#6366F1' : '#4F46E5' }]}>
+                      {isUser ? 'You' : 'AI Assistant'}
                     </Text>
 
                     {/* Content Body or Typing Indicator */}
@@ -537,8 +561,33 @@ export function AiChat() {
                       <TypingDots isDark={isDark} />
                     ) : (
                       <Text style={[styles.msgBodyText, { color: text }]}>
-                        {m.content}
+                        {hasUiCard
+                          ? '🎨 UI generated successfully! View and refine it in the preview panel.'
+                          : m.content}
                       </Text>
+                    )}
+
+                    {/* Action Button: Open Preview Panel (Matching Screenshot 3) */}
+                    {!isWaiting && !isUser && hasUiCard && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          setOpenPreviews((prev) => ({
+                            ...prev,
+                            [m.id]: prev[m.id] === undefined ? false : !prev[m.id],
+                          }));
+                        }}
+                        style={[
+                          styles.previewPanelBtn,
+                          {
+                            borderColor: isDark ? '#4338CA' : '#C7D2FE',
+                            backgroundColor: isDark ? '#141E33' : '#FFFFFF',
+                          },
+                        ]}
+                        activeOpacity={0.8}
+                      >
+                        <Sparkles size={14} color="#6366F1" />
+                        <Text style={styles.previewPanelBtnText}>Open Preview Panel</Text>
+                      </TouchableOpacity>
                     )}
 
                     {/* Timestamp & Copy Button */}
@@ -546,7 +595,17 @@ export function AiChat() {
                       <View style={styles.msgTimeRow}>
                         <Text style={[styles.msgTimeText, { color: textMuted }]}>{m.timestamp}</Text>
                         {!isUser && (
-                          <TouchableOpacity onPress={() => handleCopyText(m.content, m.id)} style={{ marginLeft: 6 }}>
+                          <TouchableOpacity
+                            onPress={() =>
+                              handleCopyText(
+                                hasUiCard
+                                  ? '🎨 UI generated successfully! View and refine it in the preview panel.'
+                                  : m.content,
+                                m.id
+                              )
+                            }
+                            style={{ marginLeft: 6 }}
+                          >
                             {copiedId === m.id ? (
                               <CheckCheck size={13} color="#10B981" />
                             ) : (
@@ -557,77 +616,139 @@ export function AiChat() {
                       </View>
                     )}
 
+                    {/* Render Embedded JSON Schema if returned in message text without toolInvocation */}
+                    {!isWaiting && !isUser && hasUiCard && isPreviewOpen && extractJsonSchema(m.content) && !m.toolInvocations?.some((inv) => inv.toolName === 'render_ui_card') && (
+                      <View style={{ width: '100%', marginTop: 10 }}>
+                        <GenerativeUiView schema={extractJsonSchema(m.content)} title="Generated UI Schema" />
+                      </View>
+                    )}
+
                     {/* Render Generative UI Cards if requested or returned by tool */}
-                    {m.toolInvocations?.map((inv, idx) => (
+                    {isPreviewOpen && m.toolInvocations?.map((inv, idx) => (
                       <View key={idx} style={styles.toolCardWrap}>
                         {inv.toolName === 'render_ui_card' && (
-                          <View style={[styles.generativeUiCard, { backgroundColor: cardBg, borderColor: isDark ? '#3B1C54' : '#E9D5FF' }]}>
-                            <View style={styles.generativeHeader}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Palette size={15} color="#8B5CF6" />
-                                <Text style={[styles.generativeTitle, { color: text }]}>
-                                  {inv.args?.title || 'Generative UI Component'}
-                                </Text>
-                              </View>
-                              <View style={[styles.genBadge, { backgroundColor: '#EDE9FE' }]}>
-                                <Text style={styles.genBadgeText}>AI UI WIDGET</Text>
-                              </View>
-                            </View>
-
-                            {/* Profile Card Widget */}
-                            {inv.args?.componentType === 'profile-card' && (
-                              <View style={styles.profileWidget}>
-                                <View style={[styles.profileAvatarCircle, { backgroundColor: '#8B5CF6' }]}>
-                                  <Text style={styles.profileAvatarText}>AR</Text>
-                                </View>
-                                <Text style={[styles.profileName, { color: text }]}>{inv.args.title || 'Alex Rivera'}</Text>
-                                <Text style={[styles.profileRole, { color: textMuted }]}>
-                                  {inv.args.subtitle || 'Senior AI Engineer'}
-                                </Text>
-
-                                <View style={styles.profileStatsRow}>
-                                  <View style={styles.statItem}>
-                                    <Text style={[styles.statVal, { color: text }]}>14.8k</Text>
-                                    <Text style={[styles.statLbl, { color: textMuted }]}>Followers</Text>
-                                  </View>
-                                  <View style={styles.statDivider} />
-                                  <View style={styles.statItem}>
-                                    <Text style={[styles.statVal, { color: text }]}>42</Text>
-                                    <Text style={[styles.statLbl, { color: textMuted }]}>Projects</Text>
-                                  </View>
-                                  <View style={styles.statDivider} />
-                                  <View style={styles.statItem}>
-                                    <Text style={[styles.statVal, { color: text }]}>San Francisco</Text>
-                                    <Text style={[styles.statLbl, { color: textMuted }]}>Location</Text>
-                                  </View>
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Feedback Form Widget */}
-                            {inv.args?.componentType === 'feedback-form' && (
-                              <View style={styles.feedbackWidget}>
-                                <Text style={[styles.feedbackLabel, { color: text }]}>How satisfied are you with this response?</Text>
-                                <View style={styles.starsRow}>
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <TouchableOpacity key={star} onPress={() => setUserRating(star)}>
-                                      <Star
-                                        size={22}
-                                        color={star <= userRating ? '#F59E0B' : cardBorder}
-                                        fill={star <= userRating ? '#F59E0B' : 'transparent'}
-                                      />
-                                    </TouchableOpacity>
-                                  ))}
-                                </View>
-                                <TouchableOpacity
-                                  onPress={() => setFeedbackSent(true)}
-                                  style={[styles.feedbackSubmitBtn, { backgroundColor: feedbackSent ? '#10B981' : '#8B5CF6' }]}
-                                >
-                                  <Text style={styles.feedbackSubmitText}>
-                                    {feedbackSent ? '✓ Feedback Submitted' : 'Submit Feedback'}
-                                  </Text>
-                                </TouchableOpacity>
-                              </View>
+                          <View style={{ width: '100%' }}>
+                            {inv.args?.schema ? (
+                              <GenerativeUiView schema={inv.args.schema} title={inv.args.title || 'Generative UI Component'} />
+                            ) : inv.args?.componentType === 'profile-card' || inv.args?.componentType === 'business-card' ? (
+                              <GenerativeUiView
+                                title={inv.args.title || 'User Profile Card'}
+                                schema={{
+                                  root: 'profile',
+                                  elements: {
+                                    profile: {
+                                      type: 'UserProfileCard',
+                                      props: {
+                                        name: inv.args.title || 'Alex Rivera',
+                                        handle: inv.args.subtitle || '@arivera_ai',
+                                        role: inv.args.role || 'Lead AI Engineer & Product Architect',
+                                        avatarUrl: inv.args.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200',
+                                        fallback: 'AR',
+                                        bio: inv.args.bio || 'Building world-class mobile & generative UI component design systems.',
+                                        location: inv.args.data?.location || 'San Francisco, CA',
+                                        stats: [
+                                          { label: 'Projects', value: inv.args.data?.projects || 42 },
+                                          { label: 'Followers', value: inv.args.data?.followers || '14.8k' },
+                                          { label: 'Following', value: 520 },
+                                        ],
+                                      },
+                                    },
+                                  },
+                                }}
+                              >
+                                <UserProfileCard
+                                  name={inv.args.title || 'Alex Rivera'}
+                                  handle={inv.args.subtitle || '@arivera_ai'}
+                                  role={inv.args.role || 'Lead AI Engineer & Product Architect'}
+                                  avatarUrl={inv.args.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'}
+                                  fallback="AR"
+                                  bio={inv.args.bio || 'Building world-class mobile & generative UI component design systems.'}
+                                  location={inv.args.data?.location || 'San Francisco, CA'}
+                                  stats={[
+                                    { label: 'Projects', value: inv.args.data?.projects || 42 },
+                                    { label: 'Followers', value: inv.args.data?.followers || '14.8k' },
+                                    { label: 'Following', value: 520 },
+                                  ]}
+                                />
+                              </GenerativeUiView>
+                            ) : inv.args?.componentType === 'feedback-form' ? (
+                              <GenerativeUiView
+                                title={inv.args.title || 'Feedback Form'}
+                                schema={{
+                                  root: 'feedback',
+                                  elements: {
+                                    feedback: {
+                                      type: 'DynamicFeedbackForm',
+                                      props: {
+                                        title: inv.args.title || 'Send Product Feedback',
+                                        description: inv.args.subtitle || 'Help us improve by rating your experience and sharing suggestions.',
+                                      },
+                                    },
+                                  },
+                                }}
+                              >
+                                <DynamicFeedbackForm
+                                  title={inv.args.title || 'Send Product Feedback'}
+                                  description={inv.args.subtitle || 'Help us improve by rating your experience and sharing suggestions.'}
+                                />
+                              </GenerativeUiView>
+                            ) : inv.args?.componentType === 'pricing-card' ? (
+                              <GenerativeUiView
+                                title={inv.args.title || 'Pricing Tier'}
+                                schema={{
+                                  root: 'pricing',
+                                  elements: {
+                                    pricing: {
+                                      type: 'PricingCard',
+                                      props: {
+                                        title: inv.args.title || 'Pro Tier',
+                                        description: inv.args.subtitle || 'For high throughput scaling teams',
+                                        price: inv.args.price || '$49',
+                                        period: inv.args.period || '/month',
+                                        popular: inv.args.popular !== false,
+                                        features: inv.args.features || ['Unlimited AI Generation', 'Multi-Model Switcher', 'Priority Support'],
+                                        buttonLabel: 'Get Started',
+                                      },
+                                    },
+                                  },
+                                }}
+                              >
+                                <PricingCard
+                                  title={inv.args.title || 'Pro Tier'}
+                                  description={inv.args.subtitle || 'For high throughput scaling teams'}
+                                  price={inv.args.price || '$49'}
+                                  period={inv.args.period || '/month'}
+                                  popular={inv.args.popular !== false}
+                                  features={inv.args.features || ['Unlimited AI Generation', 'Multi-Model Switcher', 'Priority Support']}
+                                />
+                              </GenerativeUiView>
+                            ) : inv.args?.componentType === 'kpi-metric' ? (
+                              <GenerativeUiView
+                                title={inv.args.title || 'Analytics KPI'}
+                                schema={{
+                                  root: 'kpi',
+                                  elements: {
+                                    kpi: {
+                                      type: 'PremiumStats',
+                                      props: {
+                                        variant: inv.args.variant || '01',
+                                        title: inv.args.title || 'Platform Analytics',
+                                        value: inv.args.value || '$94,320.00',
+                                        change: inv.args.change || '+18.4%',
+                                      },
+                                    },
+                                  },
+                                }}
+                              >
+                                <PremiumStats
+                                  variant={inv.args.variant || '01'}
+                                  title={inv.args.title || 'Platform Analytics'}
+                                  value={inv.args.value || '$94,320.00'}
+                                  change={inv.args.change || '+18.4%'}
+                                />
+                              </GenerativeUiView>
+                            ) : (
+                              <GenerativeUiView schema={inv.args} title="Generative UI Component" />
                             )}
                           </View>
                         )}
@@ -1108,6 +1229,23 @@ const styles = StyleSheet.create({
   },
   msgTimeText: {
     fontSize: 11,
+  },
+  previewPanelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 24,
+    borderWidth: 1,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  previewPanelBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6366F1',
   },
   toolCardWrap: {
     marginTop: 8,

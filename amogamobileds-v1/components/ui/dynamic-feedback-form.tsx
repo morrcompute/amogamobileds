@@ -12,6 +12,7 @@ export interface DynamicFeedbackFormProps {
   title?: string;
   description?: string;
   onSubmit?: (data: { name: string; email: string; rating: number; category: string; feedback: string }) => void;
+  borderless?: boolean;
   style?: any;
 }
 
@@ -21,6 +22,7 @@ export function DynamicFeedbackForm({
   title = 'Send Product Feedback',
   description = 'Help us improve by rating your experience and sharing suggestions.',
   onSubmit,
+  borderless = false,
   style,
 }: DynamicFeedbackFormProps) {
   const theme = useColorScheme();
@@ -39,6 +41,11 @@ export function DynamicFeedbackForm({
   const textMuted = isDark ? '#94A3B8' : '#64748B';
   const inputBg = isDark ? '#1E293B' : '#F8FAFC';
 
+  const Container = borderless ? View : Card;
+  const containerStyle = borderless
+    ? [{ padding: 16, width: '100%' }, style]
+    : [{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 20 }, style];
+
   const handleSubmit = () => {
     if (onSubmit) {
       onSubmit({ name, email, rating, category, feedback });
@@ -48,8 +55,8 @@ export function DynamicFeedbackForm({
 
   if (submitted) {
     return (
-      <Card style={[{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 20 }, style]}>
-        <CardContent style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
+      <Container style={containerStyle}>
+        <View style={{ padding: borderless ? 12 : 32, alignItems: 'center', justifyContent: 'center' }}>
           <View
             style={{
               width: 54,
@@ -79,25 +86,25 @@ export function DynamicFeedbackForm({
           >
             Submit Another Response
           </Button>
-        </CardContent>
-      </Card>
+        </View>
+      </Container>
     );
   }
 
   return (
-    <Card style={[{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 20 }, style]}>
-      <CardHeader style={{ padding: 20, paddingBottom: 12 }}>
-        <CardTitle style={{ fontSize: 17, fontWeight: '800', color: textPrimary }}>
+    <Container style={containerStyle}>
+      <View style={{ padding: borderless ? 0 : 20, paddingBottom: 12 }}>
+        <Text style={{ fontSize: 17, fontWeight: '800', color: textPrimary }}>
           {title}
-        </CardTitle>
+        </Text>
         {description && (
-          <CardDescription style={{ fontSize: 12, color: textMuted, marginTop: 4 }}>
+          <Text style={{ fontSize: 12, color: textMuted, marginTop: 4 }}>
             {description}
-          </CardDescription>
+          </Text>
         )}
-      </CardHeader>
+      </View>
 
-      <CardContent style={{ padding: 20, paddingTop: 0, gap: 16 }}>
+      <View style={{ padding: borderless ? 0 : 20, paddingTop: 0, gap: 16 }}>
         {/* Rating Stars */}
         <View>
           <Text style={{ fontSize: 12, fontWeight: '700', color: textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -211,7 +218,7 @@ export function DynamicFeedbackForm({
         >
           Submit Feedback
         </Button>
-      </CardContent>
-    </Card>
+      </View>
+    </Container>
   );
 }

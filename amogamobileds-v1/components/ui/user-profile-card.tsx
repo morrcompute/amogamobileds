@@ -24,6 +24,7 @@ export interface UserProfileCardProps {
   }[];
   onFollow?: () => void;
   onMessage?: () => void;
+  borderless?: boolean;
   style?: any;
 }
 
@@ -44,6 +45,7 @@ export function UserProfileCard({
   ],
   onFollow,
   onMessage,
+  borderless = false,
   style,
 }: UserProfileCardProps) {
   const theme = useColorScheme();
@@ -55,9 +57,14 @@ export function UserProfileCard({
   const textMuted = isDark ? '#94A3B8' : '#64748B';
   const statBg = isDark ? '#1E293B' : '#F8FAFC';
 
+  const Container = borderless ? View : Card;
+  const containerStyle = borderless
+    ? [{ padding: 16, width: '100%' }, style]
+    : [{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 20 }, style];
+
   return (
-    <Card style={[{ backgroundColor: cardBg, borderColor, borderWidth: 1, borderRadius: 20 }, style]}>
-      <CardContent style={{ padding: 20 }}>
+    <Container style={containerStyle}>
+      <View style={{ padding: borderless ? 0 : 20 }}>
         {/* Header with Avatar and Basic Info */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 16 }}>
           <Avatar size={64}>
@@ -157,7 +164,7 @@ export function UserProfileCard({
             Message
           </Button>
         </View>
-      </CardContent>
-    </Card>
+      </View>
+    </Container>
   );
 }
