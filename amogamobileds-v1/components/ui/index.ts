@@ -73,6 +73,7 @@ export * from './tool-selector';
 export * from './json-renderer';
 export * from './schema-editor';
 export * from './generative-ui-view';
+export * from './wizard';
 export { default as app_preference_settings } from './app_preference_settings.json';
 export { default as app_preference_settings_json } from './app_preference_settings.json';
 export { default as calendar_tasks_json } from './calendar-tasks.json';

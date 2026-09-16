@@ -31,6 +31,13 @@ import {
   SlidersHorizontal,
   Command,
   Bot,
+  Wand2,
+  Kanban,
+  FolderOpen,
+  CreditCard,
+  Receipt,
+  TrendingUp,
+  Mail,
 } from 'lucide-react-native';
 import {
   COMPONENTS,
@@ -76,6 +83,13 @@ const CATEGORY_ITEMS: CategoryConfig[] = [
   { name: 'Icons', label: 'Icons', Icon: Compass },
   { name: 'Chat', label: 'Chat', Icon: MessageSquare },
   { name: 'Chat UI Render', label: 'Chat UI Render', Icon: Bot },
+  { name: 'Wizards', label: 'Wizards', Icon: Wand2 },
+  { name: 'Kanban Board', label: 'Kanban', Icon: Kanban },
+  { name: 'Files', label: 'Files', Icon: FolderOpen },
+  { name: 'Data Cards', label: 'Data Cards', Icon: CreditCard },
+  { name: 'Vouchers', label: 'Vouchers', Icon: Receipt },
+  { name: 'Stats', label: 'Stats', Icon: TrendingUp },
+  { name: 'Mail', label: 'Mail', Icon: Mail },
   { name: 'Auth', label: 'Auth', Icon: ShieldCheck },
   { name: 'Pages', label: 'Pages', Icon: SlidersHorizontal },
 ];
@@ -227,6 +241,26 @@ export default function WebPlaygroundScreen() {
         return { bg: isDark ? '#0c3547' : '#E0F2FE', text: isDark ? '#7dd3fc' : '#0284C7' };
       case 'CHAT':
         return { bg: isDark ? '#0e3a24' : '#DCFCE7', text: isDark ? '#86efac' : '#15803D' };
+      case 'WIZARD':
+      case 'WIZARDS':
+        return { bg: isDark ? '#3b1c54' : '#F3E8FF', text: isDark ? '#c084fc' : '#8B5CF6' };
+      case 'KANBAN':
+        return { bg: isDark ? '#452b0d' : '#FEF3C7', text: isDark ? '#fcd34d' : '#D97706' };
+      case 'FILES':
+      case 'FILE':
+        return { bg: isDark ? '#0c3547' : '#E0F2FE', text: isDark ? '#7dd3fc' : '#0284C7' };
+      case 'DATA CARD':
+      case 'DATACARD':
+        return { bg: isDark ? '#262153' : '#EDE9FE', text: isDark ? '#a5b4fc' : '#6366F1' };
+      case 'VOUCHER':
+      case 'VOUCHERS':
+        return { bg: isDark ? '#4a1532' : '#FCE7F3', text: isDark ? '#f472b6' : '#DB2777' };
+      case 'STATS':
+      case 'METRIC':
+        return { bg: isDark ? '#0e3a24' : '#DCFCE7', text: isDark ? '#86efac' : '#16A34A' };
+      case 'MAIL':
+      case 'EMAIL':
+        return { bg: isDark ? '#262153' : '#E0E7FF', text: isDark ? '#818cf8' : '#4F46E5' };
       case 'AUTH':
         return { bg: isDark ? '#1e293b' : '#EDE9FE', text: isDark ? '#c084fc' : '#7c3aed' };
       case 'PAGE':

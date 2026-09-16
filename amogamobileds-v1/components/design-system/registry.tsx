@@ -131,6 +131,61 @@ import {
   ToolSelectorPreview,
   StackPreview,
 } from './previews/ChatUiRenderPreviews';
+import {
+  QuestionnaireWizardPreview,
+  MultiStepWizardPreview,
+  SegmentedStepProgressPreview,
+  LinearAndCircularProgressPreview,
+} from './previews/WizardPreviews';
+import {
+  CompleteKanbanBoardPreview,
+  TaskCardItemPreview,
+} from './previews/KanbanPreviews';
+import {
+  FileUploaderAndViewerPreview,
+  FileManagerViewPreview,
+  FileCardItemPreview,
+  FolderTreeItemPreview,
+  FileUploadFormPreview,
+} from './previews/FilesPreviews';
+import {
+  IntegrationCardPreview,
+  CreditCardPreview,
+  EcommerceProductCardPreview,
+  AssignTaskCardPreview,
+  AppointmentCardPreview,
+  StatisticsCardPreview,
+} from './previews/DataCardsPreviews';
+import {
+  CompleteVouchersPagePreview,
+  NewVoucherScanPreview,
+  NewVoucherPreview,
+} from './previews/VouchersPreviews';
+import {
+  StatsBlocksCollectionPreview,
+  Stats01TrendingPreview,
+  Stats02BordersPreview,
+  Stats03CardsPreview,
+  Stats04BadgesPreview,
+  Stats05LinksPreview,
+  Stats06StatusPreview,
+  Stats07RadialProgressPreview,
+  Stats08RadialLinksPreview,
+  Stats09LinearProgressPreview,
+  Stats10AreaSparklinePreview,
+  Stats11ResourceDashboardPreview,
+  Stats12UsageMetersPreview,
+  Stats13SegmentedProgressPreview,
+  Stats14ResourceBreakdownPreview,
+  Stats15GrowthProjectionPreview,
+} from './previews/StatsPreviews';
+import {
+  CompleteMailPagePreview,
+  EmailViewPreview,
+  EmailDetailPreview,
+  EmailEditorPreview,
+  EmailCardItemPreview,
+} from './previews/MailPreviews';
 
 export type ComponentCategory =
   | 'Primitives'
@@ -145,6 +200,13 @@ export type ComponentCategory =
   | 'Icons'
   | 'Chat'
   | 'Chat UI Render'
+  | 'Wizards'
+  | 'Kanban Board'
+  | 'Files'
+  | 'Data Cards'
+  | 'Vouchers'
+  | 'Stats'
+  | 'Mail'
   | 'Auth'
   | 'Pages';
 
@@ -3018,7 +3080,676 @@ export function Example() {
 }`,
   },
   /* =========================================================================
-     14. PAGES & SCREENS
+     14. WIZARDS & MULTI-STEP FLOWS
+     ========================================================================= */
+  {
+    id: 'wizard-questionnaire',
+    name: 'Questionnaire & Onboarding Wizard',
+    file: 'wizard.tsx',
+    category: 'Wizards',
+    tag: 'WIZARD',
+    description: 'Interactive multi-step questionnaire flow matching shadcn and amogads specifications. Features personal details, role picker cards, session date & time picker, feature choices, progress bar, summary review, and restart.',
+    Preview: QuestionnaireWizardPreview,
+    codeSnippet: `import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Wizard } from 'amogamobileds-v1';
+
+export function QuestionnaireWizardExample() {
+  const [step, setStep] = useState(0);
+  const [name, setName] = useState('');
+  const [role, setRole] = useState('Product Manager');
+
+  const steps = [
+    { id: '1', title: 'Personal Details', description: 'Name & role' },
+    { id: '2', title: 'Schedule Session', description: 'Date & time' },
+    { id: '3', title: 'Preferences', description: 'Features' },
+  ];
+
+  return (
+    <Wizard
+      title="Onboarding Questionnaire"
+      subtitle="Tailor your workspace preferences"
+      steps={steps}
+      currentStepIndex={step}
+      onStepChange={setStep}
+      onNext={() => setStep(s => s + 1)}
+      onPrevious={() => setStep(s => s - 1)}
+      onSubmit={() => console.log('Completed!')}
+    >
+      <Text>Step content here</Text>
+    </Wizard>
+  );
+}`,
+  },
+  {
+    id: 'wizard-template',
+    name: 'Multi-Step Form Wizard',
+    file: 'wizard.tsx',
+    category: 'Wizards',
+    tag: 'WIZARD',
+    description: 'Universal multi-step workflow container component with customizable step definitions, breadcrumb indicator, back/next controls, responsive card body, and submit action.',
+    Preview: MultiStepWizardPreview,
+    codeSnippet: `import React, { useState } from 'react';
+import { Wizard, WizardStep } from 'amogamobileds-v1';
+
+export function MultiStepWizardExample() {
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps: WizardStep[] = [
+    { id: '1', title: 'General Info', description: 'Name & summary' },
+    { id: '2', title: 'Audience', description: 'Industry target' },
+    { id: '3', title: 'Deploy', description: 'Environment setup' },
+  ];
+
+  return (
+    <Wizard
+      title="Provisioning Wizard"
+      steps={steps}
+      currentStepIndex={currentStep}
+      onStepChange={setCurrentStep}
+      onNext={() => setCurrentStep(s => s + 1)}
+      onPrevious={() => setCurrentStep(s => s - 1)}
+      onSubmit={() => console.log('Submitted')}
+    >
+      {/* Current step form components */}
+    </Wizard>
+  );
+}`,
+  },
+  {
+    id: 'wizard-step-progress',
+    name: 'Segmented Step Progress',
+    file: 'wizard.tsx',
+    category: 'Wizards',
+    tag: 'WIZARD',
+    description: 'Visual multi-stage workflow step progress indicator with animated progress fill line, stage labels, subtitle descriptions, and completion percentage readout.',
+    Preview: SegmentedStepProgressPreview,
+    codeSnippet: `import React, { useState } from 'react';
+import { View } from 'react-native';
+import { StepIndicator } from 'amogamobileds-v1';
+
+export function StepProgressExample() {
+  const [activeStep, setActiveStep] = useState(1);
+
+  const steps = [
+    { id: '1', title: 'Account', description: 'Personal details' },
+    { id: '2', title: 'Verification', description: 'Identity check' },
+    { id: '3', title: 'Billing', description: 'Payment method' },
+    { id: '4', title: 'Completion', description: 'Confirmation' },
+  ];
+
+  return (
+    <View style={{ padding: 16 }}>
+      <StepIndicator
+        steps={steps}
+        currentStepIndex={activeStep}
+        onStepClick={setActiveStep}
+      />
+    </View>
+  );
+}`,
+  },
+  {
+    id: 'wizard-progress-bars',
+    name: 'Linear & Circular Progress Indicators',
+    file: 'progress.tsx',
+    category: 'Wizards',
+    tag: 'WIZARD',
+    description: 'Linear progress bar with real-time controls (+/- 10%, simulate, pause) and radial circular SVG progress ring with cloud sync status.',
+    Preview: LinearAndCircularProgressPreview,
+    codeSnippet: `import React, { useState } from 'react';
+import { View, Text } from 'react-native';
+import { Progress } from 'amogamobileds-v1';
+
+export function ProgressIndicatorsExample() {
+  const [progress, setProgress] = useState(65);
+
+  return (
+    <View style={{ padding: 20, gap: 12 }}>
+      <Text>Progress: {progress}%</Text>
+      <Progress value={progress} />
+    </View>
+  );
+}`,
+  },
+  /* =========================================================================
+     15. KANBAN BOARD
+     ========================================================================= */
+  {
+    id: 'complete-kanban-board',
+    name: 'Complete Kanban Board Template',
+    file: 'kanbantemplate/index.tsx',
+    category: 'Kanban Board',
+    tag: 'KANBAN',
+    description: 'Full interactive Kanban Board template featuring draggable task columns (To Do, In Progress, Under Review, Completed), priority badges, assignee avatars, task creation modal, and column actions.',
+    Preview: CompleteKanbanBoardPreview,
+    codeSnippet: `import { CompleteKanbanBoardPreview } from 'amogamobileds-v1';
+
+export function KanbanPage() {
+  return <CompleteKanbanBoardPreview />;
+}`,
+  },
+  {
+    id: 'kanban-task-card',
+    name: 'Task Card Item',
+    file: 'task-card-item.tsx',
+    category: 'Kanban Board',
+    tag: 'KANBAN',
+    description: 'Sidebar card representing the Tasks and Kanban Board section. Shows project title, date range badge, active dot, and Kanban label.',
+    Preview: TaskCardItemPreview,
+    codeSnippet: `import { TaskCardItemPreview } from 'amogamobileds-v1';
+
+export function TaskCardDemo() {
+  return <TaskCardItemPreview isSelected={true} />;
+}`,
+  },
+  /* =========================================================================
+     16. FILES & DOCUMENTS
+     ========================================================================= */
+  {
+    id: 'file-manager-view',
+    name: 'File Manager View',
+    file: 'user-file-cards-view.tsx',
+    category: 'Files',
+    tag: 'FILES',
+    description: 'Complete folder & file manager view panel featuring folder title (Finance & Invoices), file count pill (4 files), storage path, notification/flag header actions, top controls (LTR, Filter, Sort, Short, View: Card), category filters (All Files, Images, Pdf, Doc, Xls, Videos, Ppt, Txt, Zip), search input, pagination (1–4 of 4), and file cards (PDF, Image, Doc, Spreadsheet) with quick Preview, Download, and More actions.',
+    Preview: FileManagerViewPreview,
+    codeSnippet: `import { FileManagerViewPreview } from 'amogamobileds-v1';
+
+export function FileManagerDemo() {
+  return <FileManagerViewPreview />;
+}`,
+  },
+  {
+    id: 'file-card-item',
+    name: 'File Card Item',
+    file: 'file-card-item.tsx',
+    category: 'Files',
+    tag: 'FILES',
+    description: 'Individual file card component with category-tailored themes (PDF red, Doc blue, XLS emerald, Image amber, Video purple, Zip orange), rich media/icon preview, size & date meta, quick preview/download, and actions.',
+    Preview: FileCardItemPreview,
+    codeSnippet: `import { FileCardItemPreview } from 'amogamobileds-v1';
+
+export function FileCardDemo() {
+  return <FileCardItemPreview />;
+}`,
+  },
+  {
+    id: 'file-upload-form',
+    name: 'New File Upload',
+    file: 'file-upload-form.tsx',
+    category: 'Files',
+    tag: 'FILES',
+    description: 'New file upload composer featuring "Back to Storage" navigation, storage settings warning banner with "Go to App Settings" CTA, Folder & Sub-folder dropdown selectors, Remarks multiline input, Description/Notes editor with rich text formatting toolbar (Bold, Italic, Underline, Lists, Paperclip), Cancel, Save as Draft, and Save actions.',
+    Preview: FileUploadFormPreview,
+    codeSnippet: `import { FileUploadFormPreview } from 'amogamobileds-v1';
+
+export function UploadDemo() {
+  return <FileUploadFormPreview />;
+}`,
+  },
+  {
+    id: 'folder-tree-item',
+    name: 'Folder Tree Navigation',
+    file: 'folder-tree-item.tsx',
+    category: 'Files',
+    tag: 'FILES',
+    description: 'Hierarchical collapsible folder tree node for file navigation sidebar with 3-level nesting (root, user workspace, category subfolder), file count badge, and active selection indicator.',
+    Preview: FolderTreeItemPreview,
+    codeSnippet: `import { FolderTreeItemPreview } from 'amogamobileds-v1';
+
+export function FolderTreeDemo() {
+  return <FolderTreeItemPreview />;
+}`,
+  },
+  {
+    id: 'file-uploader-viewer',
+    name: 'File Uploader & Inline Document Viewer',
+    file: 'file-picker.tsx',
+    category: 'Files',
+    tag: 'FILES',
+    description: 'Combined file attachment dropzone with real-time JSON metadata export, file remove actions, and inline full-page document reading preview.',
+    Preview: FileUploaderAndViewerPreview,
+    codeSnippet: `import { FileUploaderAndViewerPreview } from 'amogamobileds-v1';
+
+export function FileViewerDemo() {
+  return <FileUploaderAndViewerPreview />;
+}`,
+  },
+  /* =========================================================================
+     17. DATA CARDS
+     ========================================================================= */
+  {
+    id: 'card-19-integration',
+    name: 'Card 19 - Integration Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'App integration card featuring Slack integration status, toggle switch, connection badge, description, and settings link.',
+    Preview: IntegrationCardPreview,
+    codeSnippet: `import { IntegrationCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <IntegrationCardPreview />;
+}`,
+  },
+  {
+    id: 'card-18-credit-card',
+    name: 'Card 18 - Credit Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'Sleek credit card component featuring EMV chip, contactless wave icon, card number, cardholder name, expiration date, and Visa logo.',
+    Preview: CreditCardPreview,
+    codeSnippet: `import { CreditCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <CreditCardPreview />;
+}`,
+  },
+  {
+    id: 'card-17-ecommerce-product',
+    name: 'Card 17 - Ecommerce Product Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'E-commerce product card featuring image placeholder, discount badge (-30%), star rating (4.8), price comparison, color swatches, size picker, and add-to-cart action.',
+    Preview: EcommerceProductCardPreview,
+    codeSnippet: `import { EcommerceProductCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <EcommerceProductCardPreview />;
+}`,
+  },
+  {
+    id: 'card-16-assign-task',
+    name: 'Card 16 - Assign Task Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'Project task assignment card featuring task title, priority badge (HIGH), assignee avatar with name, due date countdown (3 days left), and change assignee link.',
+    Preview: AssignTaskCardPreview,
+    codeSnippet: `import { AssignTaskCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <AssignTaskCardPreview />;
+}`,
+  },
+  {
+    id: 'card-15-appointment',
+    name: 'Card 15 - Appointment Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'Medical or consultation appointment card featuring doctor/specialist avatar, appointment date & time, clinic location with map pin, Reschedule and Confirm actions.',
+    Preview: AppointmentCardPreview,
+    codeSnippet: `import { AppointmentCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <AppointmentCardPreview />;
+}`,
+  },
+  {
+    id: 'card-14-statistics',
+    name: 'Card 14 - Statistics Card',
+    file: 'data-cards.tsx',
+    category: 'Data Cards',
+    tag: 'DATA CARD',
+    description: 'Compact statistics & analytics card featuring weekly revenue metric ($24,500), +14.2% growth badge, sparkline bar graph, and target achieved indicator.',
+    Preview: StatisticsCardPreview,
+    codeSnippet: `import { StatisticsCardPreview } from 'amogamobileds-v1';
+
+export function CardPage() {
+  return <StatisticsCardPreview />;
+}`,
+  },
+  /* =========================================================================
+     18. VOUCHERS
+     ========================================================================= */
+  {
+    id: 'voucher-invoice-maker',
+    name: 'Voucher Form (AI OCR & Print)',
+    file: 'invoice-maker.tsx',
+    category: 'Vouchers',
+    tag: 'VOUCHER',
+    description: 'Complete interactive 3-step Voucher creation form (Upload Document, Edit Fields, Voucher Preview) featuring OCR document parser, structured field editor, catalog item picker, and document print preview.',
+    Preview: CompleteVouchersPagePreview,
+    codeSnippet: `import { CompleteVouchersPagePreview } from 'amogamobileds-v1';
+
+export function VoucherPage() {
+  return <CompleteVouchersPagePreview />;
+}`,
+  },
+  {
+    id: 'new-voucher-scan',
+    name: 'New Voucher Scan',
+    file: 'NewVouncherScan.tsx',
+    category: 'Vouchers',
+    tag: 'VOUCHER',
+    description: 'Voucher document processing workflow featuring the file metadata upload form on Step 1 with auto OCR extraction.',
+    Preview: NewVoucherScanPreview,
+    codeSnippet: `import { NewVoucherScanPreview } from 'amogamobileds-v1';
+
+export function VoucherScanPage() {
+  return <NewVoucherScanPreview />;
+}`,
+  },
+  {
+    id: 'new-voucher',
+    name: 'New Voucher Card',
+    file: 'NewVouncher.tsx',
+    category: 'Vouchers',
+    tag: 'VOUCHER',
+    description: 'Voucher preview and payment detail card with verified badge, payee information, and subtotal/tax calculations.',
+    Preview: NewVoucherPreview,
+    codeSnippet: `import { NewVoucherPreview } from 'amogamobileds-v1';
+
+export function VoucherCardPage() {
+  return <NewVoucherPreview />;
+}`,
+  },
+  /* =========================================================================
+     19. STATS
+     ========================================================================= */
+  {
+    id: 'complete-stats-blocks',
+    name: 'Stats Blocks Collection',
+    file: 'stats.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Complete collection of 15 beautifully styled metric & stats blocks: Trending indicators, border cards, badges, status indicators, circular progress rings, area sparklines, and usage breakdown bars.',
+    Preview: StatsBlocksCollectionPreview,
+    codeSnippet: `import { StatsBlocksCollectionPreview } from 'amogamobileds-v1';
+
+export function StatsPage() {
+  return <StatsBlocksCollectionPreview />;
+}`,
+  },
+  {
+    id: 'stats-01-trending',
+    name: '01. Stats with Trending',
+    file: 'stats-01.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'KPI stats grid featuring Profit, Late payments, Pending orders, and Operating costs with tabular numbers and green/red trend percentage change pills.',
+    Preview: Stats01TrendingPreview,
+    codeSnippet: `import { Stats01TrendingPreview } from 'amogamobileds-v1';
+
+export function Stats01Demo() {
+  return <Stats01TrendingPreview />;
+}`,
+  },
+  {
+    id: 'stats-02-borders',
+    name: '02. Stats with Borders',
+    file: 'stats-02.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Metric stats card with bordered column dividers, showing current vs previous baseline metrics (Active Users, Conversion Rate, Avg Session Duration) with TrendingUp / TrendingDown badges.',
+    Preview: Stats02BordersPreview,
+    codeSnippet: `import { Stats02BordersPreview } from 'amogamobileds-v1';
+
+export function Stats02Demo() {
+  return <Stats02BordersPreview />;
+}`,
+  },
+  {
+    id: 'stats-03-cards',
+    name: '03. Stats with Card Layout',
+    file: 'stats-03.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Individual cards grid for Unique visitors, Bounce rate, Visit duration, and Conversion rate with bold 3xl values and inline change deltas.',
+    Preview: Stats03CardsPreview,
+    codeSnippet: `import { Stats03CardsPreview } from 'amogamobileds-v1';
+
+export function Stats03Demo() {
+  return <Stats03CardsPreview />;
+}`,
+  },
+  {
+    id: 'stats-04-badges',
+    name: '04. Stats with Badges',
+    file: 'stats-04.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Metric cards with top-aligned title and trend pill badges (Daily active users, Weekly sessions, Duration) and bold primary values.',
+    Preview: Stats04BadgesPreview,
+    codeSnippet: `import { Stats04BadgesPreview } from 'amogamobileds-v1';
+
+export function Stats04Demo() {
+  return <Stats04BadgesPreview />;
+}`,
+  },
+  {
+    id: 'stats-05-links',
+    name: '05. Stats with Links',
+    file: 'stats-05.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Stats cards with metric trend deltas and bottom actionable footer links ("View more →") for Monthly Recurring Revenue, Users, and User Growth.',
+    Preview: Stats05LinksPreview,
+    codeSnippet: `import { Stats05LinksPreview } from 'amogamobileds-v1';
+
+export function Stats05Demo() {
+  return <Stats05LinksPreview />;
+}`,
+  },
+  {
+    id: 'stats-06-status',
+    name: '06. Stats with Status Indicators',
+    file: 'stats-06.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Regional metric stats cards (Europe, North America, Asia) with goals achieved counts, status level indicators (within, observe, critical), status icon badges, and navigation chevrons.',
+    Preview: Stats06StatusPreview,
+    codeSnippet: `import { Stats06StatusPreview } from 'amogamobileds-v1';
+
+export function Stats06Demo() {
+  return <Stats06StatusPreview />;
+}`,
+  },
+  {
+    id: 'stats-07-radial-progress',
+    name: '07. Stats with Circular Progress',
+    file: 'stats-07.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Plan overview card featuring circular radial progress meters for Workspaces, Dashboards, Chart widgets, and Storage with capacity percentages and resource limits.',
+    Preview: Stats07RadialProgressPreview,
+    codeSnippet: `import { Stats07RadialProgressPreview } from 'amogamobileds-v1';
+
+export function Stats07Demo() {
+  return <Stats07RadialProgressPreview />;
+}`,
+  },
+  {
+    id: 'stats-08-radial-links',
+    name: '08. Stats with Radial Progress & Links',
+    file: 'stats-08.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Departmental budget tracking cards (HR, Marketing, Finance, Engineering) with radial circular progress meters, budget ratios, and "View more →" action links.',
+    Preview: Stats08RadialLinksPreview,
+    codeSnippet: `import { Stats08RadialLinksPreview } from 'amogamobileds-v1';
+
+export function Stats08Demo() {
+  return <Stats08RadialLinksPreview />;
+}`,
+  },
+  {
+    id: 'stats-09-linear-progress',
+    name: '09. Stats with Progress Bars',
+    file: 'stats-09.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Linear progress bar cards for resource consumption tracking (Requests, Credits, Storage, API Calls) with percentage indicators and usage-to-limit ratios.',
+    Preview: Stats09LinearProgressPreview,
+    codeSnippet: `import { Stats09LinearProgressPreview } from 'amogamobileds-v1';
+
+export function Stats09Demo() {
+  return <Stats09LinearProgressPreview />;
+}`,
+  },
+  {
+    id: 'stats-10-area-sparkline',
+    name: '10. Stats with Sparkline Area Chart',
+    file: 'stats-10.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Financial ticker metric cards (Alpha Corp, Beta Solutions, Gamma Industries) with stock pricing, point changes, and mini gradient area sparkline charts.',
+    Preview: Stats10AreaSparklinePreview,
+    codeSnippet: `import { Stats10AreaSparklinePreview } from 'amogamobileds-v1';
+
+export function Stats10Demo() {
+  return <Stats10AreaSparklinePreview />;
+}`,
+  },
+  {
+    id: 'stats-11-resource-dashboard',
+    name: '11. Stats Dashboard with Progress & Actions',
+    file: 'stats-11.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Database and cloud infrastructure metrics dashboard with split read/write commands, bandwidth limits with warning alerts, storage gauges, cost budget trackers, and quick upgrade actions.',
+    Preview: Stats11ResourceDashboardPreview,
+    codeSnippet: `import { Stats11ResourceDashboardPreview } from 'amogamobileds-v1';
+
+export function Stats11Demo() {
+  return <Stats11ResourceDashboardPreview />;
+}`,
+  },
+  {
+    id: 'stats-12-usage-meters',
+    name: '12. Stats Usage Breakdown Dashboard',
+    file: 'stats-12.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: '30-day cloud consumption dashboard with donut meters for ISR Reads, Edge Requests, Fast Origin Transfer, Speed Insights, Function Duration, and Web Analytics events.',
+    Preview: Stats12UsageMetersPreview,
+    codeSnippet: `import { Stats12UsageMetersPreview } from 'amogamobileds-v1';
+
+export function Stats12Demo() {
+  return <Stats12UsageMetersPreview />;
+}`,
+  },
+  {
+    id: 'stats-13-segmented-progress',
+    name: '13. Stats with Segmented Progress',
+    file: 'stats-13.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Multi-category storage allocation bar with segmented colors for Documents, Photos, Videos, Music, and Free storage with detailed breakdown legend.',
+    Preview: Stats13SegmentedProgressPreview,
+    codeSnippet: `import { Stats13SegmentedProgressPreview } from 'amogamobileds-v1';
+
+export function Stats13Demo() {
+  return <Stats13SegmentedProgressPreview />;
+}`,
+  },
+  {
+    id: 'stats-14-resource-breakdown',
+    name: '14. Stats with Usage Breakdown',
+    file: 'stats-14.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Monthly cloud spending breakdown card ($860) with +12.5% trend badge, segmented progress bar for Compute, Storage, and Bandwidth, and direct link to resource settings.',
+    Preview: Stats14ResourceBreakdownPreview,
+    codeSnippet: `import { Stats14ResourceBreakdownPreview } from 'amogamobileds-v1';
+
+export function Stats14Demo() {
+  return <Stats14ResourceBreakdownPreview />;
+}`,
+  },
+  {
+    id: 'stats-15-growth-projection',
+    name: '15. Stats with Value Breakdown',
+    file: 'stats-15.tsx',
+    category: 'Stats',
+    tag: 'STATS',
+    description: 'Investment growth projection card showing returns after 1 year, 5 years, and 10 years with bordered rows, monetary values, and emerald percentage return tags.',
+    Preview: Stats15GrowthProjectionPreview,
+    codeSnippet: `import { Stats15GrowthProjectionPreview } from 'amogamobileds-v1';
+
+export function Stats15Demo() {
+  return <Stats15GrowthProjectionPreview />;
+}`,
+  },
+  /* =========================================================================
+     20. MAIL
+     ========================================================================= */
+  {
+    id: 'complete-mail-page',
+    name: 'Complete Mail Page (Inbox & Thread)',
+    file: 'complete-mail-page.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'Full dual-pane email client layout: Left sidebar showing inbox list with search, unread dots, and date pills + Right panel displaying email conversation thread with sender info, rich body, star toggle, and reply toolbar.',
+    Preview: CompleteMailPagePreview,
+    codeSnippet: `import { CompleteMailPagePreview } from 'amogamobileds-v1';
+
+export function MailPage() {
+  return <CompleteMailPagePreview />;
+}`,
+  },
+  {
+    id: 'email-view',
+    name: 'Email View',
+    file: 'email-view.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'Comprehensive standalone email view panel featuring sender profile with avatar and timestamp, editable subject box, rich text formatting toolbar (Bold, Italic, Underline, Lists, Links, Images, Paperclip), formatted message body with milestone bullet points, PDF attachments section with download & preview actions, and bottom action buttons (Reply, Reply All, Forward, Delete).',
+    Preview: EmailViewPreview,
+    codeSnippet: `import { EmailViewPreview } from 'amogamobileds-v1';
+
+export function EmailViewDemo() {
+  return <EmailViewPreview />;
+}`,
+  },
+  {
+    id: 'email-detail',
+    name: 'Email Detail View',
+    file: 'email-detail.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'Full email detail view panel featuring top action toolbar (Archive, Delete, Spam, Snooze, Reply, Reply All, Forward, More, Close), sender header with avatar, timestamp and Reply-To, subheader with relative time, rich formatted message body with milestone progress status, and docked bottom rich text formatting toolbar.',
+    Preview: EmailDetailPreview,
+    codeSnippet: `import { EmailDetailPreview } from 'amogamobileds-v1';
+
+export function EmailDetailDemo() {
+  return <EmailDetailPreview />;
+}`,
+  },
+  {
+    id: 'email-editor',
+    name: 'Email Editor (Inline Reply)',
+    file: 'email-editor.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'Inline rich reply email editor with full formatting toolbar (Bold, Italic, Strikethrough, Code, H1-H6 headings, Lists, Links, Undo/Redo), draft recipient status, multi-line reply area, AI autocomplete shortcut tip (Cmd + J), and Send action.',
+    Preview: EmailEditorPreview,
+    codeSnippet: `import { EmailEditorPreview } from 'amogamobileds-v1';
+
+export function EmailEditorDemo() {
+  return <EmailEditorPreview />;
+}`,
+  },
+  {
+    id: 'email-card-item',
+    name: 'Email Card Item',
+    file: 'email-card-item.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'Sidebar email list item card with unread indicator dot, date pill, subject, and snippet preview.',
+    Preview: EmailCardItemPreview,
+    codeSnippet: `import { EmailCardItemPreview } from 'amogamobileds-v1';
+
+export function EmailCardDemo() {
+  return <EmailCardItemPreview isSelected={true} />;
+}`,
+  },
+  /* =========================================================================
+     21. PAGES & SCREENS
      ========================================================================= */
   {
     id: 'page-preference',

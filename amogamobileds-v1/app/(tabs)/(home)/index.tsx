@@ -30,6 +30,13 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Bot,
+  Wand2,
+  Kanban,
+  FolderOpen,
+  CreditCard,
+  Receipt,
+  TrendingUp,
+  Mail,
 } from 'lucide-react-native';
 import {
   COMPONENTS,
@@ -59,6 +66,13 @@ const CATEGORY_ITEMS: CategoryConfig[] = [
   { name: 'Icons', label: 'Icons', Icon: Compass },
   { name: 'Chat', label: 'Chat', Icon: MessageSquare },
   { name: 'Chat UI Render', label: 'Chat UI Render', Icon: Bot },
+  { name: 'Wizards', label: 'Wizards', Icon: Wand2 },
+  { name: 'Kanban Board', label: 'Kanban', Icon: Kanban },
+  { name: 'Files', label: 'Files', Icon: FolderOpen },
+  { name: 'Data Cards', label: 'Data Cards', Icon: CreditCard },
+  { name: 'Vouchers', label: 'Vouchers', Icon: Receipt },
+  { name: 'Stats', label: 'Stats', Icon: TrendingUp },
+  { name: 'Mail', label: 'Mail', Icon: Mail },
   { name: 'Auth', label: 'Auth', Icon: ShieldCheck },
   { name: 'Pages', label: 'Pages', Icon: SlidersHorizontal },
 ];
@@ -142,6 +156,26 @@ export default function DesignSystemScreen() {
         return { bg: '#E0F2FE', text: '#0284C7' };
       case 'CHAT':
         return { bg: '#DCFCE7', text: '#15803D' };
+      case 'WIZARD':
+      case 'WIZARDS':
+        return { bg: '#F3E8FF', text: '#8B5CF6' }; // Soft violet
+      case 'KANBAN':
+        return { bg: '#FEF3C7', text: '#D97706' };
+      case 'FILES':
+      case 'FILE':
+        return { bg: '#E0F2FE', text: '#0284C7' };
+      case 'DATA CARD':
+      case 'DATACARD':
+        return { bg: '#EDE9FE', text: '#6366F1' };
+      case 'VOUCHER':
+      case 'VOUCHERS':
+        return { bg: '#FCE7F3', text: '#DB2777' };
+      case 'STATS':
+      case 'METRIC':
+        return { bg: '#DCFCE7', text: '#16A34A' };
+      case 'MAIL':
+      case 'EMAIL':
+        return { bg: '#E0E7FF', text: '#4F46E5' };
       case 'AUTH':
         return { bg: '#EDE9FE', text: '#7C3AED' };
       default:
