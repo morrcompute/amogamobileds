@@ -1,0 +1,30 @@
+{
+  "email": "ask@morrai.com",
+  "password": "0un:ZX3JOs&E",
+  "smtp": {
+    "host": "smtp.hostinger.com",
+    "port": 587,
+    "secure": false,
+    "requireTLS": true
+  },
+  "imap": {
+    "host": "imap.hostinger.com",
+    "port": 993,
+    "secure": true
+  },
+  "accounts": [
+    {
+      "id": "email-hostinger-1",
+      "email": "ask@morrai.com",
+      "password": "0un:ZX3JOs&E",
+      "protocol": "IMAP",
+      "incomingServer": "imap.hostinger.com",
+      "incomingPort": 993,
+      "outgoingServer": "smtp.hostinger.com",
+      "outgoingPort": 587,
+      "useSSL": true,
+      "useTLS": true,
+      "isEnabled": true
+    }
+  ]
+}

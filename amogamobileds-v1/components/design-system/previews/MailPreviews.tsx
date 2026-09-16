@@ -47,6 +47,9 @@ import {
   Clock,
   CornerUpLeft,
   CornerUpRight,
+  ArrowLeft,
+  ChevronDown,
+  Save,
 } from 'lucide-react-native';
 import { useTheme } from '../../../providers/theme-provider';
 import type { GalleryEntry } from '../../types';
@@ -108,7 +111,7 @@ export const DEMO_EMAILS: EmailItemData[] = [
     attachments: [
       {
         id: 'att1',
-        name: 'Q3-Update.pdf',
+        name: 'quarterly-report.pdf',
         type: 'PDF',
         size: '2.4 MB',
       },
@@ -186,11 +189,28 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
 
   const [emailList, setEmailList] = useState<EmailItemData[]>(DEMO_EMAILS);
   const [selectedId, setSelectedId] = useState<string>(DEMO_EMAILS[0].id);
-  const [activeApp, setActiveApp] = useState<'calendar' | 'mail' | 'chat' | 'sparkles' | 'bot' | 'file'>('mail');
   const [activeTab, setActiveTab] = useState<'Inbox' | 'Sent' | 'Folder' | 'Contact' | 'Groups'>('Inbox');
   const [searchQuery, setSearchQuery] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [starredMap, setStarredMap] = useState<Record<string, boolean>>({ m1: true });
+
+  // Compose State
+  const [composeTo, setComposeTo] = useState('');
+  const [composeFrom, setComposeFrom] = useState('ask@morrai.com');
+  const [composeSubject, setComposeSubject] = useState('');
+  const [composeBody, setComposeBody] = useState('');
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [composeCc, setComposeCc] = useState('');
+  const [composeBcc, setComposeBcc] = useState('');
+  const [composeAttachments, setComposeAttachments] = useState<EmailAttachment[]>([
+    {
+      id: 'att-demo-1',
+      name: 'quarterly-report.pdf',
+      type: 'PDF',
+      size: '2.4 MB',
+    },
+  ]);
 
   const selectedEmail = emailList.find((e) => e.id === selectedId) || emailList[0];
 
@@ -249,125 +269,6 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
               !isDesktop && selectedEmail && !isComposing ? styles.hideOnMobile : null,
             ]}
           >
-            {/* Header */}
-            <View style={styles.leftHeaderRow}>
-              <Text style={[styles.messagesTitle, { color: textMain }]}>
-                Messages
-              </Text>
-              <View style={styles.headerActionIcons}>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Settings2 size={16} color={textMuted} />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <View style={styles.bellWrapper}>
-                    <Bell size={16} color={textMuted} />
-                    <View style={styles.bellBadge}>
-                      <Text style={styles.bellBadgeText}>2</Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* App Switcher */}
-            <View style={[styles.appSwitcherBar, { borderBottomColor: borderColor }]}>
-              <TouchableOpacity
-                onPress={() => setActiveApp('calendar')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'calendar' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <Calendar
-                  size={16}
-                  color={activeApp === 'calendar' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setActiveApp('mail')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'mail' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <Mail
-                  size={16}
-                  color={activeApp === 'mail' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setActiveApp('chat')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'chat' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <MessageSquare
-                  size={16}
-                  color={activeApp === 'chat' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setActiveApp('sparkles')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'sparkles' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <Sparkles
-                  size={16}
-                  color={activeApp === 'sparkles' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setActiveApp('bot')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'bot' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <Bot
-                  size={16}
-                  color={activeApp === 'bot' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setActiveApp('file')}
-                style={[
-                  styles.appIconBtn,
-                  activeApp === 'file' && [
-                    styles.appIconBtnActive,
-                    { backgroundColor: isDark ? '#3b1c54' : '#f3e8ff' },
-                  ],
-                ]}
-              >
-                <FileText
-                  size={16}
-                  color={activeApp === 'file' ? (isDark ? '#c084fc' : '#7c3aed') : textMuted}
-                />
-              </TouchableOpacity>
-            </View>
-
             {/* Tabs & Pagination */}
             <View style={styles.tabsRow}>
               <ScrollView
@@ -390,8 +291,8 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                         style={[
                           styles.tabItemText,
                           {
-                            color: isActive ? textMain : textMuted,
-                            fontWeight: isActive ? '700' : '500',
+                            color: isActive ? (isDark ? '#c084fc' : '#7c3aed') : textMuted,
+                            fontWeight: isActive ? '600' : '400',
                           },
                         ]}
                       >
@@ -437,6 +338,7 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                 onPress={() => setIsComposing((c) => !c)}
                 style={styles.newEmailPillBtn}
               >
+                <Mail size={14} color="#ffffff" strokeWidth={2.2} />
                 <Text style={styles.newEmailPillText}>New +</Text>
               </TouchableOpacity>
             </View>
@@ -468,7 +370,7 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                             styles.senderNameLabel,
                             {
                               color: textMain,
-                              fontWeight: isSelected ? '700' : '600',
+                              fontWeight: isSelected ? '600' : '500',
                             },
                           ]}
                         >
@@ -508,7 +410,7 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                         styles.cardSubjectText,
                         {
                           color: textMain,
-                          fontWeight: item.read ? '600' : '700',
+                          fontWeight: item.read ? '500' : '600',
                         },
                       ]}
                     >
@@ -550,21 +452,51 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
             ]}
           >
             {isComposing ? (
-              <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, gap: 14 }}>
-                <View style={styles.composeHeaderRow}>
+              /* ── COMPOSE NEW MESSAGE VIEW MATCHING EXACT SCREENSHOT ── */
+              <ScrollView
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.composeContainerStyle}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Header: New Message & Back to Message */}
+                <View style={[styles.composeHeaderRow, { borderBottomColor: borderColor }]}>
                   <Text style={[styles.detailHeading, { color: textMain }]}>
                     New Message
                   </Text>
-                  <TouchableOpacity onPress={() => setIsComposing(false)}>
-                    <X size={18} color={textMuted} />
+                  <TouchableOpacity
+                    onPress={() => setIsComposing(false)}
+                    style={styles.backToMsgBtn}
+                  >
+                    <ArrowLeft size={15} color={textMain} />
+                    <Text style={[styles.backToMsgText, { color: textMain }]}>
+                      Back to Message
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
+                {/* 1. Select Template */}
                 <View style={styles.fieldSection}>
-                  <Text style={[styles.fieldLabel, { color: textMuted }]}>To</Text>
+                  <Text style={[styles.fieldLabel, { color: textMain }]}>Select Template</Text>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    style={[
+                      styles.templateDropdownBtn,
+                      { backgroundColor: inputBg, borderColor },
+                    ]}
+                  >
+                    <Text style={[styles.templateDropdownText, { color: textMain }]}>Blank</Text>
+                    <ChevronDown size={14} color={textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                {/* 2. Subject */}
+                <View style={styles.fieldSection}>
+                  <Text style={[styles.fieldLabel, { color: textMain }]}>Subject</Text>
                   <TextInput
-                    placeholder="recipient@demo.com"
+                    placeholder="Enter subject"
                     placeholderTextColor={textMuted}
+                    value={composeSubject}
+                    onChangeText={setComposeSubject}
                     style={[
                       styles.inputBox,
                       { backgroundColor: inputBg, borderColor, color: textMain },
@@ -572,11 +504,12 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                   />
                 </View>
 
+                {/* 3. From */}
                 <View style={styles.fieldSection}>
-                  <Text style={[styles.fieldLabel, { color: textMuted }]}>Subject</Text>
+                  <Text style={[styles.fieldLabel, { color: textMain }]}>From</Text>
                   <TextInput
-                    placeholder="Email subject..."
-                    placeholderTextColor={textMuted}
+                    value={composeFrom}
+                    editable={false}
                     style={[
                       styles.inputBox,
                       { backgroundColor: inputBg, borderColor, color: textMain },
@@ -584,44 +517,232 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                   />
                 </View>
 
+                {/* 4. To */}
                 <View style={styles.fieldSection}>
-                  <Text style={[styles.fieldLabel, { color: textMuted }]}>Content</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={[styles.fieldLabel, { color: textMain }]}>To</Text>
+                    <View style={{ flexDirection: 'row', gap: 10 }}>
+                      <TouchableOpacity onPress={() => setShowCc((s) => !s)}>
+                        <Text style={{ fontSize: 11.5, color: '#7c3aed', fontFamily: 'Open Sans', fontWeight: '600' }}>
+                          Cc
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setShowBcc((s) => !s)}>
+                        <Text style={{ fontSize: 11.5, color: '#7c3aed', fontFamily: 'Open Sans', fontWeight: '600' }}>
+                          Bcc
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                   <TextInput
-                    placeholder="Write your email message..."
+                    placeholder="Recipient email address (e.g. recipient@example.com)"
                     placeholderTextColor={textMuted}
-                    multiline
+                    value={composeTo}
+                    onChangeText={setComposeTo}
                     style={[
                       styles.inputBox,
-                      {
-                        minHeight: 140,
-                        textAlignVertical: 'top',
-                        backgroundColor: inputBg,
-                        borderColor,
-                        color: textMain,
-                      },
+                      { backgroundColor: inputBg, borderColor, color: textMain },
                     ]}
                   />
                 </View>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+                {showCc && (
+                  <View style={styles.fieldSection}>
+                    <Text style={[styles.fieldLabel, { color: textMain }]}>Cc</Text>
+                    <TextInput
+                      placeholder="Cc recipient email address"
+                      placeholderTextColor={textMuted}
+                      value={composeCc}
+                      onChangeText={setComposeCc}
+                      style={[
+                        styles.inputBox,
+                        { backgroundColor: inputBg, borderColor, color: textMain },
+                      ]}
+                    />
+                  </View>
+                )}
+
+                {showBcc && (
+                  <View style={styles.fieldSection}>
+                    <Text style={[styles.fieldLabel, { color: textMain }]}>Bcc</Text>
+                    <TextInput
+                      placeholder="Bcc recipient email address"
+                      placeholderTextColor={textMuted}
+                      value={composeBcc}
+                      onChangeText={setComposeBcc}
+                      style={[
+                        styles.inputBox,
+                        { backgroundColor: inputBg, borderColor, color: textMain },
+                      ]}
+                    />
+                  </View>
+                )}
+
+                {/* 5. Message with Rich Toolbar */}
+                <View style={styles.fieldSection}>
+                  <Text style={[styles.fieldLabel, { color: textMain }]}>Message</Text>
+                  <View
+                    style={[
+                      styles.emailContentBox,
+                      { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor },
+                    ]}
+                  >
+                    <View style={[styles.richToolbar, { borderBottomColor: borderColor, backgroundColor: isDark ? '#141e33' : '#f8fafc' }]}>
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <Text style={[styles.toolbarTextBtn, { color: textMain }]}>B</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <Text style={[styles.toolbarTextBtn, { fontStyle: 'italic', color: textMain }]}>I</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <Text style={[styles.toolbarTextBtn, { textDecorationLine: 'underline', color: textMain }]}>U</Text>
+                      </TouchableOpacity>
+
+                      <View style={[styles.toolbarDivider, { backgroundColor: borderColor }]} />
+
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <List size={14} color={textMain} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <ListOrdered size={14} color={textMain} />
+                      </TouchableOpacity>
+
+                      <View style={[styles.toolbarDivider, { backgroundColor: borderColor }]} />
+
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <Link2 size={14} color={textMain} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.toolbarBtn}>
+                        <ImageIcon size={14} color={textMain} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => alert('Attach file')}
+                        style={styles.toolbarBtn}
+                      >
+                        <Paperclip size={14} color={textMain} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <TextInput
+                      placeholder="Write your email message..."
+                      placeholderTextColor={textMuted}
+                      value={composeBody}
+                      onChangeText={setComposeBody}
+                      multiline
+                      textAlignVertical="top"
+                      style={[
+                        styles.composeTextArea,
+                        { color: textMain },
+                      ]}
+                    />
+                  </View>
+                </View>
+
+                {/* 6. Attachments Section */}
+                <View style={styles.attachmentsSection}>
+                  <Text style={[styles.attachmentsHeading, { color: textMain }]}>
+                    Attachments ({composeAttachments.length})
+                  </Text>
+
+                  {composeAttachments.map((att) => (
+                    <View
+                      key={att.id}
+                      style={[
+                        styles.attachmentCard,
+                        { backgroundColor: inputBg, borderColor },
+                      ]}
+                    >
+                      <View style={styles.attachmentLeft}>
+                        <View
+                          style={[
+                            styles.pdfTypeBox,
+                            { backgroundColor: isDark ? '#334155' : '#ede9fe' },
+                          ]}
+                        >
+                          <FileText size={16} color="#7c3aed" />
+                        </View>
+                        <View>
+                          <Text style={[styles.attachmentName, { color: textMain }]}>
+                            {att.name}
+                          </Text>
+                          <Text style={[styles.attachmentSize, { color: textMuted }]}>
+                            {att.size}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.attachmentActions}>
+                        <TouchableOpacity
+                          onPress={() => alert(`Downloading ${att.name}...`)}
+                          style={styles.attActionBtn}
+                        >
+                          <Download size={15} color={textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => alert(`Previewing ${att.name}...`)}
+                          style={styles.attActionBtn}
+                        >
+                          <Eye size={15} color={textMuted} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() =>
+                            setComposeAttachments((prev) => prev.filter((a) => a.id !== att.id))
+                          }
+                          style={styles.attActionBtn}
+                        >
+                          <X size={15} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    onPress={() => alert('Attach file dialog')}
+                    style={[
+                      styles.attachFilesOutlineBtn,
+                      { borderColor, width: '100%', marginTop: 6, height: 38, justifyContent: 'center' },
+                    ]}
+                  >
+                    <Paperclip size={14} color={textMain} />
+                    <Text style={[styles.attachFilesOutlineText, { color: textMain }]}>
+                      Attach Files
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* 7. Footer Actions */}
+                <View style={styles.composeFooterRow}>
                   <TouchableOpacity
                     onPress={() => setIsComposing(false)}
                     style={[styles.outlineActionBtn, { borderColor }]}
                   >
-                    <Text style={[styles.outlineActionBtnText, { color: textMuted }]}>
+                    <Text style={[styles.outlineActionBtnText, { color: textMain }]}>
                       Cancel
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => {
-                      alert('Email sent successfully!');
-                      setIsComposing(false);
-                    }}
-                    style={styles.sendPurpleBtn}
-                  >
-                    <Send size={14} color="#ffffff" />
-                    <Text style={styles.sendPurpleBtnText}>Send Message</Text>
-                  </TouchableOpacity>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => alert('Draft saved successfully!')}
+                      style={[styles.outlineActionBtn, { borderColor, flexDirection: 'row', alignItems: 'center', gap: 6 }]}
+                    >
+                      <Save size={14} color={textMain} />
+                      <Text style={[styles.outlineActionBtnText, { color: textMain }]}>
+                        Save as Draft
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        alert('Email sent successfully!');
+                        setIsComposing(false);
+                      }}
+                      style={styles.sendPurpleBtn}
+                    >
+                      <Send size={14} color="#ffffff" />
+                      <Text style={styles.sendPurpleBtnText}>Send</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </ScrollView>
             ) : selectedEmail ? (
@@ -768,7 +889,7 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
 
                       <Text style={[styles.bodyNormalText, { color: textMain }]}>
                         {selectedEmail.intro.split('85% completion')[0]}
-                        <Text style={{ fontWeight: '800' }}>85% completion</Text>
+                        <Text style={{ fontWeight: '600' }}>85% completion</Text>
                         {selectedEmail.intro.split('85% completion')[1] || ''}
                       </Text>
 
@@ -813,12 +934,10 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                           <View
                             style={[
                               styles.pdfTypeBox,
-                              { backgroundColor: isDark ? '#334155' : '#e2e8f0' },
+                              { backgroundColor: isDark ? '#334155' : '#ede9fe' },
                             ]}
                           >
-                            <Text style={[styles.pdfTypeText, { color: textMuted }]}>
-                              {att.type}
-                            </Text>
+                            <FileText size={16} color="#7c3aed" />
                           </View>
                           <View>
                             <Text style={[styles.attachmentName, { color: textMain }]}>
@@ -851,10 +970,10 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
                       onPress={() => alert('Opening file chooser...')}
                       style={[
                         styles.attachFilesOutlineBtn,
-                        { borderColor },
+                        { borderColor, width: '100%', marginTop: 6, height: 38, justifyContent: 'center' },
                       ]}
                     >
-                      <Paperclip size={13} color={textMain} />
+                      <Paperclip size={14} color={textMain} />
                       <Text style={[styles.attachFilesOutlineText, { color: textMain }]}>
                         Attach Files
                       </Text>
@@ -921,7 +1040,340 @@ export function CompleteMailPagePreview({ stateIndex = 0 }: { stateIndex?: numbe
 }
 
 // =========================================================================
-// 2. EMAIL VIEW PREVIEW (STANDALONE CARD MATCHING EXACT SCREENSHOT)
+// 2. EMAIL COMPOSE PREVIEW (STANDALONE CARD MATCHING EXACT SCREENSHOTS)
+// =========================================================================
+
+export function EmailComposePreview({ stateIndex = 0 }: { stateIndex?: number }) {
+  const { colors, resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+
+  const [subject, setSubject] = useState('');
+  const [to, setTo] = useState('');
+  const [from] = useState('ask@morrai.com');
+  const [body, setBody] = useState('');
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [cc, setCc] = useState('');
+  const [bcc, setBcc] = useState('');
+  const [attachments, setAttachments] = useState<EmailAttachment[]>([
+    {
+      id: 'att-1',
+      name: 'quarterly-report.pdf',
+      type: 'PDF',
+      size: '2.4 MB',
+    },
+  ]);
+
+  const containerBg = isDark ? '#0f172a' : '#ffffff';
+  const borderColor = isDark ? '#1e293b' : '#e2e8f0';
+  const textMain = isDark ? '#f8fafc' : '#0f172a';
+  const textMuted = isDark ? '#94a3b8' : '#64748b';
+  const inputBg = isDark ? '#1e293b' : '#f8fafc';
+
+  return (
+    <View style={styles.cardWrapper}>
+      <View
+        style={[
+          styles.mailContainer,
+          { backgroundColor: containerBg, borderColor },
+        ]}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.composeContainerStyle}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={[styles.composeHeaderRow, { borderBottomColor: borderColor }]}>
+            <Text style={[styles.detailHeading, { color: textMain }]}>
+              New Message
+            </Text>
+            <TouchableOpacity
+              onPress={() => alert('Back to Message')}
+              style={styles.backToMsgBtn}
+            >
+              <ArrowLeft size={15} color={textMain} />
+              <Text style={[styles.backToMsgText, { color: textMain }]}>
+                Back to Message
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 1. Select Template */}
+          <View style={styles.fieldSection}>
+            <Text style={[styles.fieldLabel, { color: textMain }]}>Select Template</Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              style={[
+                styles.templateDropdownBtn,
+                { backgroundColor: inputBg, borderColor },
+              ]}
+            >
+              <Text style={[styles.templateDropdownText, { color: textMain }]}>Blank</Text>
+              <ChevronDown size={14} color={textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* 2. Subject */}
+          <View style={styles.fieldSection}>
+            <Text style={[styles.fieldLabel, { color: textMain }]}>Subject</Text>
+            <TextInput
+              placeholder="Enter subject"
+              placeholderTextColor={textMuted}
+              value={subject}
+              onChangeText={setSubject}
+              style={[
+                styles.inputBox,
+                { backgroundColor: inputBg, borderColor, color: textMain },
+              ]}
+            />
+          </View>
+
+          {/* 3. From */}
+          <View style={styles.fieldSection}>
+            <Text style={[styles.fieldLabel, { color: textMain }]}>From</Text>
+            <TextInput
+              value={from}
+              editable={false}
+              style={[
+                styles.inputBox,
+                { backgroundColor: inputBg, borderColor, color: textMain },
+              ]}
+            />
+          </View>
+
+          {/* 4. To */}
+          <View style={styles.fieldSection}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={[styles.fieldLabel, { color: textMain }]}>To</Text>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity onPress={() => setShowCc((s) => !s)}>
+                  <Text style={{ fontSize: 11.5, color: '#7c3aed', fontFamily: 'Open Sans', fontWeight: '600' }}>
+                    Cc
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowBcc((s) => !s)}>
+                  <Text style={{ fontSize: 11.5, color: '#7c3aed', fontFamily: 'Open Sans', fontWeight: '600' }}>
+                    Bcc
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            <TextInput
+              placeholder="Recipient email address (e.g. recipient@example.com)"
+              placeholderTextColor={textMuted}
+              value={to}
+              onChangeText={setTo}
+              style={[
+                styles.inputBox,
+                { backgroundColor: inputBg, borderColor, color: textMain },
+              ]}
+            />
+          </View>
+
+          {showCc && (
+            <View style={styles.fieldSection}>
+              <Text style={[styles.fieldLabel, { color: textMain }]}>Cc</Text>
+              <TextInput
+                placeholder="Cc recipient email address"
+                placeholderTextColor={textMuted}
+                value={cc}
+                onChangeText={setCc}
+                style={[
+                  styles.inputBox,
+                  { backgroundColor: inputBg, borderColor, color: textMain },
+                ]}
+              />
+            </View>
+          )}
+
+          {showBcc && (
+            <View style={styles.fieldSection}>
+              <Text style={[styles.fieldLabel, { color: textMain }]}>Bcc</Text>
+              <TextInput
+                placeholder="Bcc recipient email address"
+                placeholderTextColor={textMuted}
+                value={bcc}
+                onChangeText={setBcc}
+                style={[
+                  styles.inputBox,
+                  { backgroundColor: inputBg, borderColor, color: textMain },
+                ]}
+              />
+            </View>
+          )}
+
+          {/* 5. Message with Rich Toolbar */}
+          <View style={styles.fieldSection}>
+            <Text style={[styles.fieldLabel, { color: textMain }]}>Message</Text>
+            <View
+              style={[
+                styles.emailContentBox,
+                { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor },
+              ]}
+            >
+              <View style={[styles.richToolbar, { borderBottomColor: borderColor, backgroundColor: isDark ? '#141e33' : '#f8fafc' }]}>
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <Text style={[styles.toolbarTextBtn, { color: textMain }]}>B</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <Text style={[styles.toolbarTextBtn, { fontStyle: 'italic', color: textMain }]}>I</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <Text style={[styles.toolbarTextBtn, { textDecorationLine: 'underline', color: textMain }]}>U</Text>
+                </TouchableOpacity>
+
+                <View style={[styles.toolbarDivider, { backgroundColor: borderColor }]} />
+
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <List size={14} color={textMain} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <ListOrdered size={14} color={textMain} />
+                </TouchableOpacity>
+
+                <View style={[styles.toolbarDivider, { backgroundColor: borderColor }]} />
+
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <Link2 size={14} color={textMain} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.toolbarBtn}>
+                  <ImageIcon size={14} color={textMain} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => alert('Attach file')}
+                  style={styles.toolbarBtn}
+                >
+                  <Paperclip size={14} color={textMain} />
+                </TouchableOpacity>
+              </View>
+
+              <TextInput
+                placeholder="Write your email message..."
+                placeholderTextColor={textMuted}
+                value={body}
+                onChangeText={setBody}
+                multiline
+                textAlignVertical="top"
+                style={[
+                  styles.composeTextArea,
+                  { color: textMain },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* 6. Attachments Section */}
+          <View style={styles.attachmentsSection}>
+            <Text style={[styles.attachmentsHeading, { color: textMain }]}>
+              Attachments ({attachments.length})
+            </Text>
+
+            {attachments.map((att) => (
+              <View
+                key={att.id}
+                style={[
+                  styles.attachmentCard,
+                  { backgroundColor: inputBg, borderColor },
+                ]}
+              >
+                <View style={styles.attachmentLeft}>
+                  <View
+                    style={[
+                      styles.pdfTypeBox,
+                      { backgroundColor: isDark ? '#334155' : '#ede9fe' },
+                    ]}
+                  >
+                    <FileText size={16} color="#7c3aed" />
+                  </View>
+                  <View>
+                    <Text style={[styles.attachmentName, { color: textMain }]}>
+                      {att.name}
+                    </Text>
+                    <Text style={[styles.attachmentSize, { color: textMuted }]}>
+                      {att.size}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.attachmentActions}>
+                  <TouchableOpacity
+                    onPress={() => alert(`Downloading ${att.name}...`)}
+                    style={styles.attActionBtn}
+                  >
+                    <Download size={15} color={textMuted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => alert(`Previewing ${att.name}...`)}
+                    style={styles.attActionBtn}
+                  >
+                    <Eye size={15} color={textMuted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setAttachments((prev) => prev.filter((a) => a.id !== att.id))
+                    }
+                    style={styles.attActionBtn}
+                  >
+                    <X size={15} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              onPress={() => alert('Attach file dialog')}
+              style={[
+                styles.attachFilesOutlineBtn,
+                { borderColor, width: '100%', marginTop: 6, height: 38, justifyContent: 'center' },
+              ]}
+            >
+              <Paperclip size={14} color={textMain} />
+              <Text style={[styles.attachFilesOutlineText, { color: textMain }]}>
+                Attach Files
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 7. Footer Actions */}
+          <View style={styles.composeFooterRow}>
+            <TouchableOpacity
+              onPress={() => alert('Cancelled')}
+              style={[styles.outlineActionBtn, { borderColor }]}
+            >
+              <Text style={[styles.outlineActionBtnText, { color: textMain }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => alert('Draft saved successfully!')}
+                style={[styles.outlineActionBtn, { borderColor, flexDirection: 'row', alignItems: 'center', gap: 6 }]}
+              >
+                <Save size={14} color={textMain} />
+                <Text style={[styles.outlineActionBtnText, { color: textMain }]}>
+                  Save as Draft
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => alert('Email sent successfully!')}
+                style={styles.sendPurpleBtn}
+              >
+                <Send size={14} color="#ffffff" />
+                <Text style={styles.sendPurpleBtnText}>Send</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+// =========================================================================
+// 3. EMAIL VIEW PREVIEW (STANDALONE CARD)
 // =========================================================================
 
 export function EmailViewPreview({ stateIndex = 0 }: { stateIndex?: number }) {
@@ -1068,7 +1520,7 @@ export function EmailViewPreview({ stateIndex = 0 }: { stateIndex?: number }) {
 
               <Text style={[styles.bodyNormalText, { color: textMain }]}>
                 {email.intro.split('85% completion')[0]}
-                <Text style={{ fontWeight: '800' }}>85% completion</Text>
+                <Text style={{ fontWeight: '600' }}>85% completion</Text>
                 {email.intro.split('85% completion')[1] || ''}
               </Text>
 
@@ -1113,12 +1565,10 @@ export function EmailViewPreview({ stateIndex = 0 }: { stateIndex?: number }) {
                   <View
                     style={[
                       styles.pdfTypeBox,
-                      { backgroundColor: isDark ? '#334155' : '#e2e8f0' },
+                      { backgroundColor: isDark ? '#334155' : '#ede9fe' },
                     ]}
                   >
-                    <Text style={[styles.pdfTypeText, { color: textMuted }]}>
-                      {att.type}
-                    </Text>
+                    <FileText size={16} color="#7c3aed" />
                   </View>
                   <View>
                     <Text style={[styles.attachmentName, { color: textMain }]}>
@@ -1151,10 +1601,10 @@ export function EmailViewPreview({ stateIndex = 0 }: { stateIndex?: number }) {
               onPress={() => alert('Opening file chooser...')}
               style={[
                 styles.attachFilesOutlineBtn,
-                { borderColor },
+                { borderColor, width: '100%', marginTop: 6, height: 38, justifyContent: 'center' },
               ]}
             >
-              <Paperclip size={13} color={textMain} />
+              <Paperclip size={14} color={textMain} />
               <Text style={[styles.attachFilesOutlineText, { color: textMain }]}>
                 Attach Files
               </Text>
@@ -1210,7 +1660,7 @@ export function EmailViewPreview({ stateIndex = 0 }: { stateIndex?: number }) {
 }
 
 // =========================================================================
-// 3. EMAIL DETAIL PREVIEW (EXACT SCREENSHOT MATCH)
+// 4. EMAIL DETAIL PREVIEW
 // =========================================================================
 
 export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) {
@@ -1315,13 +1765,13 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 13, fontWeight: '700', color: '#7c3aed', fontFamily: 'Open Sans' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: '#7c3aed', fontFamily: 'Open Sans' }}>
                 JL
               </Text>
             </View>
 
             <View style={{ gap: 2 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: textMain, fontFamily: 'Open Sans' }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: textMain, fontFamily: 'Open Sans' }}>
                 From: Jordan Lee
               </Text>
               <Text style={{ fontSize: 11.5, color: textMuted, fontFamily: 'Open Sans' }}>
@@ -1340,7 +1790,7 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
           <Text
             style={{
               fontSize: 14.5,
-              fontWeight: '800',
+              fontWeight: '600',
               color: textMain,
               fontFamily: 'Open Sans',
               letterSpacing: -0.2,
@@ -1360,7 +1810,7 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
           </Text>
         </View>
 
-        {/* 4. Subheader (Inner Sender Row with relative time) */}
+        {/* 4. Subheader */}
         <View
           style={{
             flexDirection: 'row',
@@ -1381,11 +1831,11 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
                 justifyContent: 'center',
               }}
             >
-              <Text style={{ fontSize: 10.5, fontWeight: '700', color: '#7c3aed', fontFamily: 'Open Sans' }}>
+              <Text style={{ fontSize: 10.5, fontWeight: '600', color: '#7c3aed', fontFamily: 'Open Sans' }}>
                 JL
               </Text>
             </View>
-            <Text style={{ fontSize: 12.5, fontWeight: '600', color: textMain, fontFamily: 'Open Sans' }}>
+            <Text style={{ fontSize: 12.5, fontWeight: '500', color: textMain, fontFamily: 'Open Sans' }}>
               jordan@demo.com
             </Text>
           </View>
@@ -1399,8 +1849,8 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
         <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24, gap: 12 }}>
           <Text
             style={{
-              fontSize: 16,
-              fontWeight: '800',
+              fontSize: 15,
+              fontWeight: '600',
               color: textMain,
               fontFamily: 'Open Sans',
               letterSpacing: -0.2,
@@ -1415,28 +1865,28 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
 
           <Text style={{ fontSize: 12.5, color: textMain, fontFamily: 'Open Sans', lineHeight: 19 }}>
             Here is the latest update on the Q3 deliverables. We are currently at{' '}
-            <Text style={{ fontWeight: '800' }}>85% completion</Text> for the primary milestones.
+            <Text style={{ fontWeight: '600' }}>85% completion</Text> for the primary milestones.
           </Text>
 
           <View style={{ gap: 6, paddingLeft: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 13, color: textMuted }}>•</Text>
               <Text style={{ fontSize: 12.5, color: textMain, fontFamily: 'Open Sans' }}>
-                <Text style={{ fontWeight: '700' }}>Dashboard redesign:</Text> Completed ✅
+                <Text style={{ fontWeight: '600' }}>Dashboard redesign:</Text> Completed ✅
               </Text>
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 13, color: textMuted }}>•</Text>
               <Text style={{ fontSize: 12.5, color: textMain, fontFamily: 'Open Sans' }}>
-                <Text style={{ fontWeight: '700' }}>API integration:</Text> In progress 🔄
+                <Text style={{ fontWeight: '600' }}>API integration:</Text> In progress 🔄
               </Text>
             </View>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text style={{ fontSize: 13, color: textMuted }}>•</Text>
               <Text style={{ fontSize: 12.5, color: textMain, fontFamily: 'Open Sans' }}>
-                <Text style={{ fontWeight: '700' }}>QA testing:</Text> Starts Monday 📅
+                <Text style={{ fontWeight: '600' }}>QA testing:</Text> Starts Monday 📅
               </Text>
             </View>
           </View>
@@ -1465,10 +1915,10 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
           }}
         >
           <TouchableOpacity style={styles.toolbarBtn}>
-            <Text style={{ fontSize: 12, fontWeight: '800', color: textMain }}>B</Text>
+            <Text style={{ fontSize: 12, fontWeight: '700', color: textMain }}>B</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolbarBtn}>
-            <Text style={{ fontSize: 12, fontStyle: 'italic', fontWeight: '600', color: textMain }}>I</Text>
+            <Text style={{ fontSize: 12, fontStyle: 'italic', fontWeight: '500', color: textMain }}>I</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.toolbarBtn}>
             <Strikethrough size={14} color={textMain} />
@@ -1481,7 +1931,7 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
 
           {(['H1', 'H2', 'H3', 'H4', 'H5', 'H6'] as const).map((h) => (
             <TouchableOpacity key={h} style={styles.toolbarBtn}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: textMain }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: textMain }}>
                 {h}
               </Text>
             </TouchableOpacity>
@@ -1514,7 +1964,7 @@ export function EmailDetailPreview({ stateIndex = 0 }: { stateIndex?: number }) 
 }
 
 // =========================================================================
-// 4. EMAIL EDITOR PREVIEW (INLINE REPLY EXACT MATCH)
+// 5. EMAIL EDITOR PREVIEW (INLINE REPLY)
 // =========================================================================
 
 export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) {
@@ -1561,7 +2011,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
 
           {(['H1', 'H2', 'H3', 'H4', 'H5', 'H6'] as const).map((h) => (
             <TouchableOpacity key={h} style={styles.toolbarBtn}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: textMain }}>
+              <Text style={{ fontSize: 11, fontWeight: '600', color: textMain }}>
                 {h}
               </Text>
             </TouchableOpacity>
@@ -1593,13 +2043,13 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
         <View style={{ padding: 16, gap: 12 }}>
           {/* Draft indicator */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={{ fontSize: 12, fontWeight: '800', color: '#10b981' }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#10b981' }}>
               Draft
             </Text>
             <Text style={{ fontSize: 12, color: textMuted }}>
               to
             </Text>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: textMain }}>
+            <Text style={{ fontSize: 12, fontWeight: '500', color: textMain }}>
               jordan@demo.com
             </Text>
           </View>
@@ -1613,7 +2063,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
             multiline
             style={{
               minHeight: 120,
-              fontSize: 13,
+              fontSize: 12.5,
               color: textMain,
               fontFamily: 'Open Sans',
               textAlignVertical: 'top',
@@ -1621,7 +2071,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
             }}
           />
 
-          {/* Bottom Toolbar: AI Autocomplete tip + Send button */}
+          {/* Bottom Toolbar */}
           <View
             style={{
               flexDirection: 'row',
@@ -1648,7 +2098,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
                   borderRadius: 4,
                 }}
               >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: textMain }}>
+                <Text style={{ fontSize: 10, fontWeight: '600', color: textMain }}>
                   Cmd
                 </Text>
               </View>
@@ -1663,7 +2113,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
                   borderRadius: 4,
                 }}
               >
-                <Text style={{ fontSize: 10, fontWeight: '700', color: textMain }}>
+                <Text style={{ fontSize: 10, fontWeight: '600', color: textMain }}>
                   J
                 </Text>
               </View>
@@ -1684,7 +2134,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
                 borderRadius: 8,
               }}
             >
-              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '700', fontFamily: 'Open Sans' }}>
+              <Text style={{ color: '#ffffff', fontSize: 12, fontWeight: '600', fontFamily: 'Open Sans' }}>
                 Send
               </Text>
             </TouchableOpacity>
@@ -1696,7 +2146,7 @@ export function EmailEditorPreview({ stateIndex = 0 }: { stateIndex?: number }) 
 }
 
 // =========================================================================
-// 5. EMAIL CARD ITEM PREVIEW (SIDEBAR ITEM)
+// 6. EMAIL CARD ITEM PREVIEW (SIDEBAR ITEM)
 // =========================================================================
 
 export function EmailCardItemPreview({ isSelected = true }: { isSelected?: boolean }) {
@@ -1717,7 +2167,7 @@ export function EmailCardItemPreview({ isSelected = true }: { isSelected?: boole
       >
         <View style={styles.emailCardHeader}>
           <View style={styles.senderNameBox}>
-            <Text style={[styles.senderNameLabel, { color: colors.foreground, fontWeight: '700' }]}>
+            <Text style={[styles.senderNameLabel, { color: colors.foreground, fontWeight: '600' }]}>
               {item.name}
             </Text>
             <View style={styles.blueUnreadDot} />
@@ -1737,7 +2187,7 @@ export function EmailCardItemPreview({ isSelected = true }: { isSelected?: boole
           ))}
         </View>
 
-        <Text numberOfLines={1} style={[styles.cardSubjectText, { color: colors.foreground, fontWeight: '700' }]}>
+        <Text numberOfLines={1} style={[styles.cardSubjectText, { color: colors.foreground, fontWeight: '600' }]}>
           {item.subject}
         </Text>
         <Text numberOfLines={1} style={[styles.cardSnippetText, { color: colors.mutedForeground }]}>
@@ -1761,6 +2211,8 @@ export function MailPreviews({ entry }: { entry?: GalleryEntry }) {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
+      <EmailComposePreview />
+      <View style={{ height: 24 }} />
       <CompleteMailPagePreview />
       <View style={{ height: 24 }} />
       <EmailViewPreview />
@@ -1819,69 +2271,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 8,
   },
-  leftHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    paddingBottom: 4,
-  },
-  messagesTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Open Sans',
-    letterSpacing: -0.2,
-  },
-  headerActionIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconButton: {
-    padding: 4,
-    borderRadius: 6,
-  },
-  bellWrapper: {
-    position: 'relative',
-  },
-  bellBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: '#ef4444',
-    borderRadius: 6,
-    width: 13,
-    height: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  bellBadgeText: {
-    color: '#ffffff',
-    fontSize: 8.5,
-    fontWeight: '800',
-    fontFamily: 'Open Sans',
-  },
-
-  // App Switcher Bar
-  appSwitcherBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-  },
-  appIconBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appIconBtnActive: {
-    borderRadius: 8,
-  },
-
-  // Tabs Row
   tabsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1943,16 +2332,18 @@ const styles = StyleSheet.create({
   },
   newEmailPillBtn: {
     backgroundColor: '#7c3aed',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   newEmailPillText: {
     color: '#ffffff',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     fontFamily: 'Open Sans',
   },
 
@@ -2055,7 +2446,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '600',
     fontFamily: 'Open Sans',
   },
   senderDetailsCol: {
@@ -2070,7 +2461,7 @@ const styles = StyleSheet.create({
   },
   fromNameText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'Open Sans',
   },
   fromEmailText: {
@@ -2108,7 +2499,7 @@ const styles = StyleSheet.create({
   },
   subjectDisplayText: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
 
@@ -2137,7 +2528,7 @@ const styles = StyleSheet.create({
   },
   toolbarTextBtn: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'Open Sans',
     minWidth: 12,
     textAlign: 'center',
@@ -2153,7 +2544,7 @@ const styles = StyleSheet.create({
   },
   bodyHeaderTitle: {
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: '600',
     fontFamily: 'Open Sans',
     letterSpacing: -0.2,
   },
@@ -2188,7 +2579,7 @@ const styles = StyleSheet.create({
   },
   attachmentsHeading: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     fontFamily: 'Open Sans',
   },
   attachmentCard: {
@@ -2205,16 +2596,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pdfTypeBox: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 4,
+    width: 34,
+    height: 34,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  pdfTypeText: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    fontFamily: 'Open Sans',
   },
   attachmentName: {
     fontSize: 11.5,
@@ -2244,7 +2630,7 @@ const styles = StyleSheet.create({
   },
   attachFilesOutlineText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
 
@@ -2274,7 +2660,7 @@ const styles = StyleSheet.create({
   },
   actionOutlineBtnText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
   deleteOutlineBtn: {
@@ -2289,37 +2675,85 @@ const styles = StyleSheet.create({
   },
   deleteOutlineBtnText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#ef4444',
     fontFamily: 'Open Sans',
   },
 
   // Compose View
+  composeContainerStyle: {
+    padding: 20,
+    gap: 16,
+  },
   composeHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
   },
   detailHeading: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
+  },
+  backToMsgBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  backToMsgText: {
+    fontSize: 12.5,
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
   fieldSection: {
-    gap: 4,
+    gap: 6,
   },
   fieldLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
+    fontFamily: 'Open Sans',
+  },
+  templateDropdownBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    width: 130,
+  },
+  templateDropdownText: {
+    fontSize: 12.5,
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
   inputBox: {
     borderRadius: 8,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    fontSize: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 12.5,
     fontFamily: 'Open Sans',
+  },
+  composeTextArea: {
+    minHeight: 180,
+    padding: 12,
+    fontSize: 12.5,
+    fontFamily: 'Open Sans',
+    textAlignVertical: 'top',
+  },
+  composeFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 16,
+    marginTop: 10,
+    borderTopWidth: 1,
   },
   sendPurpleBtn: {
     flexDirection: 'row',
@@ -2327,25 +2761,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     backgroundColor: '#7c3aed',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
   },
   sendPurpleBtnText: {
     color: '#ffffff',
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 12.5,
+    fontWeight: '600',
     fontFamily: 'Open Sans',
   },
   outlineActionBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   outlineActionBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 12.5,
+    fontWeight: '500',
     fontFamily: 'Open Sans',
   },
 
@@ -2356,4 +2790,3 @@ const styles = StyleSheet.create({
     padding: 32,
   },
 });
-

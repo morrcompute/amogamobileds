@@ -28,6 +28,7 @@ import {
   Compass,
   HelpCircle,
   Sliders,
+  SlidersHorizontal,
   MapPin,
   Map,
   LucideIcon,
@@ -88,6 +89,9 @@ export const ICON_REGISTRY: Record<string, LucideIcon> = {
   Palette,
   Settings,
   Sliders,
+  SlidersHorizontal,
+  AppSettings: SlidersHorizontal,
+  AppSetting: SlidersHorizontal,
   LogOut,
   Sparkles,
   FileText,
@@ -159,6 +163,9 @@ export interface AppNavigationSidebarProps {
   onPreferencesPress?: () => void;
   onPreferencePress?: () => void;
   onSettingsPress?: () => void;
+  onSettingPress?: () => void;
+  onAppSettingsPress?: () => void;
+  onAppSettingPress?: () => void;
   onNotificationsPress?: () => void;
   onSignOut?: () => void;
   onLogoPress?: () => void;
@@ -183,6 +190,8 @@ export function AppNavigationSidebar({
   onPreferencesPress,
   onPreferencePress,
   onSettingsPress,
+  onAppSettingsPress,
+  onAppSettingPress,
   onNotificationsPress,
   onSignOut,
   onLogoPress,
@@ -234,7 +243,7 @@ export function AppNavigationSidebar({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={onLogoPress}
-          style={[styles.logoBadge, { backgroundColor: isDark ? '#27272a' : '#18181b', shadowColor: '#000000' }]}
+          style={[styles.logoBadge, { backgroundColor: activeColor, shadowColor: activeColor }]}
           accessibilityRole="button"
           accessibilityLabel="Amoga Logo"
         >
@@ -263,7 +272,7 @@ export function AppNavigationSidebar({
               style={[
                 styles.navItemButton,
                 isActive && {
-                  backgroundColor: isDark ? '#27272a' : '#e4e4e7',
+                  backgroundColor: isDark ? activeColor + '28' : activeColor + '18',
                 },
               ]}
               accessibilityRole="button"
@@ -274,9 +283,7 @@ export function AppNavigationSidebar({
                   size={19}
                   color={
                     isActive
-                      ? isDark
-                        ? '#ffffff'
-                        : '#0f172a'
+                      ? activeColor
                       : isDark
                       ? '#94a3b8'
                       : '#64748b'
@@ -290,13 +297,11 @@ export function AppNavigationSidebar({
                   styles.navItemLabel,
                   {
                     color: isActive
-                      ? isDark
-                        ? '#ffffff'
-                        : '#0f172a'
+                      ? activeColor
                       : isDark
                       ? '#94a3b8'
                       : '#64748b',
-                    fontWeight: isActive ? '600' : '500',
+                    fontWeight: isActive ? '700' : '500',
                   },
                 ]}
                 numberOfLines={1}
@@ -442,6 +447,7 @@ export function AppNavigationSidebar({
                         else if (item.id === 'theme') onThemePress?.();
                         else if (item.id === 'preferences') (onPreferencesPress || onPreferencePress)?.();
                         else if (item.id === 'settings') onSettingsPress?.();
+                        else if (item.id === 'app-settings' || item.id === 'appsettings' || item.id === 'app_settings') (onAppSettingsPress || onAppSettingPress || onSettingsPress)?.();
                         else if (item.id === 'notifications') onNotificationsPress?.();
                         else if (item.id === 'signout' || item.isDanger) onSignOut?.();
                         onProfileMenuSelect?.(item.id, item);

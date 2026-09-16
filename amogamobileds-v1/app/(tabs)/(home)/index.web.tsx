@@ -60,6 +60,7 @@ import {
   AppNavigationDrawer,
   ComingSoonView,
   CalendarAppView,
+  EmailAppView,
   DEFAULT_NAV_ITEMS,
   app_menu_json,
 } from '../../../components/ui';
@@ -644,6 +645,8 @@ export default function WebPlaygroundScreen() {
           <View style={{ flex: 1, height: '100%' }}>
             {mainNavId === 'calendar' ? (
               <CalendarAppView />
+            ) : mainNavId === 'email' || mainNavId === 'mail' ? (
+              <EmailAppView />
             ) : (
               <ComingSoonView
                 title={activeNavItem.label}
@@ -672,6 +675,30 @@ export default function WebPlaygroundScreen() {
             const mapComp = COMPONENTS.find((c) => c.id === 'page-full-maps');
             if (mapComp) {
               setActiveComponent(mapComp);
+              setMainNavId('home');
+              setIsDrawerOpen(false);
+            }
+          }}
+          onAppSettingsPress={() => {
+            const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+            if (appSettingsComp) {
+              setActiveComponent(appSettingsComp);
+              setMainNavId('home');
+              setIsDrawerOpen(false);
+            }
+          }}
+          onAppSettingPress={() => {
+            const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+            if (appSettingsComp) {
+              setActiveComponent(appSettingsComp);
+              setMainNavId('home');
+              setIsDrawerOpen(false);
+            }
+          }}
+          onSettingsPress={() => {
+            const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+            if (appSettingsComp) {
+              setActiveComponent(appSettingsComp);
               setMainNavId('home');
               setIsDrawerOpen(false);
             }
@@ -715,6 +742,27 @@ export default function WebPlaygroundScreen() {
           const mapComp = COMPONENTS.find((c) => c.id === 'page-full-maps');
           if (mapComp) {
             setActiveComponent(mapComp);
+            setMainNavId('home');
+          }
+        }}
+        onAppSettingsPress={() => {
+          const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+          if (appSettingsComp) {
+            setActiveComponent(appSettingsComp);
+            setMainNavId('home');
+          }
+        }}
+        onAppSettingPress={() => {
+          const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+          if (appSettingsComp) {
+            setActiveComponent(appSettingsComp);
+            setMainNavId('home');
+          }
+        }}
+        onSettingsPress={() => {
+          const appSettingsComp = COMPONENTS.find((c) => c.id === 'page-app-settings');
+          if (appSettingsComp) {
+            setActiveComponent(appSettingsComp);
             setMainNavId('home');
           }
         }}
@@ -1149,6 +1197,8 @@ export default function WebPlaygroundScreen() {
         <View style={{ flex: 1, height: '100%', backgroundColor: canvasBg }}>
           {mainNavId === 'calendar' ? (
             <CalendarAppView />
+          ) : mainNavId === 'email' || mainNavId === 'mail' ? (
+            <EmailAppView />
           ) : (
             <ComingSoonView
               title={activeNavItem.label}

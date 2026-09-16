@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Platform,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Mail,
   Sparkles,
@@ -33,6 +34,7 @@ import type { GalleryEntry } from '../../types';
 export interface EmailAccountItem {
   id: string;
   email: string;
+  password?: string;
   protocol: 'IMAP' | 'POP3';
   incomingServer: string;
   incomingPort: number;
@@ -72,8 +74,22 @@ export interface FilesStorageItem {
 
 const INITIAL_EMAIL_ACCOUNTS: EmailAccountItem[] = [
   {
+    id: 'email-hostinger-1',
+    email: 'ask@morrai.com',
+    password: '0un:ZX3JOs&E',
+    protocol: 'IMAP',
+    incomingServer: 'imap.hostinger.com',
+    incomingPort: 993,
+    outgoingServer: 'smtp.hostinger.com',
+    outgoingPort: 587,
+    useSSL: true,
+    useTLS: true,
+    isEnabled: true,
+  },
+  {
     id: 'email-1',
     email: 'user@gmail.com',
+    password: '',
     protocol: 'IMAP',
     incomingServer: 'imap.gmail.com',
     incomingPort: 993,
@@ -81,19 +97,7 @@ const INITIAL_EMAIL_ACCOUNTS: EmailAccountItem[] = [
     outgoingPort: 587,
     useSSL: true,
     useTLS: false,
-    isEnabled: true,
-  },
-  {
-    id: 'email-2',
-    email: 'user@outlook.com',
-    protocol: 'IMAP',
-    incomingServer: 'outlook.office365.com',
-    incomingPort: 993,
-    outgoingServer: 'smtp-mail.outlook.com',
-    outgoingPort: 587,
-    useSSL: true,
-    useTLS: false,
-    isEnabled: true,
+    isEnabled: false,
   },
 ];
 
@@ -163,6 +167,14 @@ const INITIAL_FILES_ACCOUNTS: FilesStorageItem[] = [
 ];
 
 const PRESET_SERVERS: Record<string, Partial<EmailAccountItem>> = {
+  Hostinger: {
+    incomingServer: 'imap.hostinger.com',
+    incomingPort: 993,
+    outgoingServer: 'smtp.hostinger.com',
+    outgoingPort: 587,
+    useSSL: true,
+    useTLS: true,
+  },
   Gmail: {
     incomingServer: 'imap.gmail.com',
     incomingPort: 993,
@@ -214,33 +226,48 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
   const [accounts, setAccounts] = useState<EmailAccountItem[]>(INITIAL_EMAIL_ACCOUNTS);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [activePreset, setActivePreset] = useState<string>('');
+  const [activePreset, setActivePreset] = useState<string>('Hostinger');
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    AsyncStorage.getItem('amoga_app_email_accounts').then((saved) => {
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAccounts(parsed);
+          }
+        } catch (_) {}
+      }
+    });
+  }, []);
 
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: 'ask@morrai.com',
+    password: '0un:ZX3JOs&E',
     protocol: 'IMAP' as 'IMAP' | 'POP3',
-    incomingServer: 'imap.example.com',
+    incomingServer: 'imap.hostinger.com',
     incomingPort: '993',
-    outgoingServer: 'smtp.example.com',
+    outgoingServer: 'smtp.hostinger.com',
     outgoingPort: '587',
     useSSL: true,
-    useSTARTTLS: false,
+    useSTARTTLS: true,
   });
 
   const handleOpenAdd = () => {
-    setActivePreset('');
+    setActivePreset('Hostinger');
     setEditingId(null);
+    setShowPassword(false);
     setFormData({
       email: '',
       password: '',
       protocol: 'IMAP',
-      incomingServer: '',
+      incomingServer: 'imap.hostinger.com',
       incomingPort: '993',
-      outgoingServer: '',
+      outgoingServer: 'smtp.hostinger.com',
       outgoingPort: '587',
       useSSL: true,
-      useSTARTTLS: false,
+      useSTARTTLS: true,
     });
     setModalOpen(true);
   };
@@ -248,9 +275,10 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
   const handleOpenEdit = (acc: EmailAccountItem) => {
     setActivePreset('');
     setEditingId(acc.id);
+    setShowPassword(false);
     setFormData({
       email: acc.email,
-      password: '••••••••',
+      password: acc.password || '',
       protocol: acc.protocol,
       incomingServer: acc.incomingServer,
       incomingPort: String(acc.incomingPort),
@@ -284,50 +312,55 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
       return;
     }
 
+    let updated: EmailAccountItem[];
     if (editingId) {
-      setAccounts((prev) =>
-        prev.map((item) =>
-          item.id === editingId
-            ? {
-                ...item,
-                email: formData.email,
-                protocol: formData.protocol,
-                incomingServer: formData.incomingServer,
-                incomingPort: parseInt(formData.incomingPort, 10) || 993,
-                outgoingServer: formData.outgoingServer,
-                outgoingPort: parseInt(formData.outgoingPort, 10) || 587,
-                useSSL: formData.useSSL,
-                useTLS: formData.useSTARTTLS,
-              }
-            : item
-        )
+      updated = accounts.map((item) =>
+        item.id === editingId
+          ? {
+              ...item,
+              email: formData.email,
+              password: formData.password,
+              protocol: formData.protocol,
+              incomingServer: formData.incomingServer,
+              incomingPort: parseInt(formData.incomingPort, 10) || 993,
+              outgoingServer: formData.outgoingServer,
+              outgoingPort: parseInt(formData.outgoingPort, 10) || 587,
+              useSSL: formData.useSSL,
+              useTLS: formData.useSTARTTLS,
+            }
+          : item
       );
     } else {
       const newAcc: EmailAccountItem = {
         id: `email-${Date.now()}`,
         email: formData.email,
+        password: formData.password,
         protocol: formData.protocol,
-        incomingServer: formData.incomingServer || 'imap.example.com',
+        incomingServer: formData.incomingServer || 'imap.hostinger.com',
         incomingPort: parseInt(formData.incomingPort, 10) || 993,
-        outgoingServer: formData.outgoingServer || 'smtp.example.com',
+        outgoingServer: formData.outgoingServer || 'smtp.hostinger.com',
         outgoingPort: parseInt(formData.outgoingPort, 10) || 587,
         useSSL: formData.useSSL,
         useTLS: formData.useSTARTTLS,
         isEnabled: true,
       };
-      setAccounts((prev) => [...prev, newAcc]);
+      updated = [...accounts, newAcc];
     }
+    setAccounts(updated);
+    AsyncStorage.setItem('amoga_app_email_accounts', JSON.stringify(updated)).catch(() => {});
     setModalOpen(false);
   };
 
   const handleToggle = (id: string) => {
-    setAccounts((prev) =>
-      prev.map((acc) => (acc.id === id ? { ...acc, isEnabled: !acc.isEnabled } : acc))
-    );
+    const updated = accounts.map((acc) => (acc.id === id ? { ...acc, isEnabled: !acc.isEnabled } : acc));
+    setAccounts(updated);
+    AsyncStorage.setItem('amoga_app_email_accounts', JSON.stringify(updated)).catch(() => {});
   };
 
   const handleDelete = (id: string) => {
-    setAccounts((prev) => prev.filter((acc) => acc.id !== id));
+    const updated = accounts.filter((acc) => acc.id !== id);
+    setAccounts(updated);
+    AsyncStorage.setItem('amoga_app_email_accounts', JSON.stringify(updated)).catch(() => {});
   };
 
   return (
@@ -344,7 +377,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         {/* Card Header */}
         <View style={styles.cardHeaderArea}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Mail size={22} color="#6366f1" />
+            <Mail size={22} color={colors.primary} />
             <Text style={[styles.cardTitleText, { color: colors.foreground }]}>
               Email Accounts Manager
             </Text>
@@ -372,10 +405,10 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
               <View
                 style={[
                   styles.accountIconBox,
-                  { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' },
+                  { backgroundColor: isDark ? colors.primary + '20' : colors.primary + '15' },
                 ]}
               >
-                <Mail size={18} color={isDark ? '#cbd5e1' : '#475569'} />
+                <Mail size={18} color={colors.primary} />
               </View>
 
               {/* Info Column */}
@@ -402,7 +435,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                   onPress={() => handleToggle(account.id)}
                   style={[
                     styles.switchTrack,
-                    { backgroundColor: account.isEnabled ? '#6366f1' : isDark ? '#334155' : '#cbd5e1' },
+                    { backgroundColor: account.isEnabled ? colors.primary : isDark ? '#334155' : '#cbd5e1' },
                   ]}
                 >
                   <View
@@ -421,7 +454,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                   style={styles.iconActionBtn}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Edit size={16} color="#3b82f6" />
+                  <Edit size={16} color={colors.primary} />
                 </TouchableOpacity>
 
                 {/* Delete Button */}
@@ -441,10 +474,10 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleOpenAdd}
-          style={[styles.primaryActionButton, { backgroundColor: '#4f46e5', marginTop: 18 }]}
+          style={[styles.primaryActionButton, { backgroundColor: colors.primary, marginTop: 18 }]}
         >
           <Plus size={18} color="#ffffff" />
-          <Text style={styles.primaryActionText}>+ Add Email Account</Text>
+          <Text style={styles.primaryActionText}>Add Email Account</Text>
         </TouchableOpacity>
       </View>
 
@@ -463,7 +496,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
             {/* Modal Header */}
             <View style={styles.modalHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Mail size={20} color="#6366f1" />
+                <Mail size={20} color={colors.primary} />
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {editingId ? 'Edit Email Account' : 'Add Email Account'}
                 </Text>
@@ -489,7 +522,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                     styles.presetPill,
                     {
                       backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                      borderColor: activePreset === preset ? '#6366f1' : isDark ? '#334155' : '#e2e8f0',
+                      borderColor: activePreset === preset ? colors.primary : isDark ? '#334155' : '#e2e8f0',
                       borderWidth: activePreset === preset ? 1.5 : 1,
                     },
                   ]}
@@ -498,7 +531,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                     style={{
                       fontSize: 12.5,
                       fontWeight: '600',
-                      color: activePreset === preset ? '#6366f1' : colors.foreground,
+                      color: activePreset === preset ? colors.primary : colors.foreground,
                     }}
                   >
                     {preset}
@@ -509,8 +542,8 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
             {/* Account Credentials Section */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Lock size={15} color="#6366f1" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#6366f1' }]}>
+              <Lock size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Account Credentials
               </Text>
             </View>
@@ -567,12 +600,12 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 style={[
                   styles.protocolCard,
                   {
-                    borderColor: formData.protocol === 'IMAP' ? '#6366f1' : colors.border,
-                    backgroundColor: formData.protocol === 'IMAP' ? (isDark ? 'rgba(99, 102, 241, 0.12)' : '#eef2ff') : 'transparent',
+                    borderColor: formData.protocol === 'IMAP' ? colors.primary : colors.border,
+                    backgroundColor: formData.protocol === 'IMAP' ? (isDark ? colors.primary + '20' : colors.primary + '15') : 'transparent',
                   },
                 ]}
               >
-                <Text style={{ fontSize: 13, fontWeight: '700', color: formData.protocol === 'IMAP' ? '#6366f1' : colors.foreground }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: formData.protocol === 'IMAP' ? colors.primary : colors.foreground }}>
                   IMAP
                 </Text>
                 <Text style={{ fontSize: 10.5, color: colors.mutedForeground, marginTop: 2 }}>
@@ -585,12 +618,12 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 style={[
                   styles.protocolCard,
                   {
-                    borderColor: formData.protocol === 'POP3' ? '#6366f1' : colors.border,
-                    backgroundColor: formData.protocol === 'POP3' ? (isDark ? 'rgba(99, 102, 241, 0.12)' : '#eef2ff') : 'transparent',
+                    borderColor: formData.protocol === 'POP3' ? colors.primary : colors.border,
+                    backgroundColor: formData.protocol === 'POP3' ? (isDark ? colors.primary + '20' : colors.primary + '15') : 'transparent',
                   },
                 ]}
               >
-                <Text style={{ fontSize: 13, fontWeight: '700', color: formData.protocol === 'POP3' ? '#6366f1' : colors.foreground }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: formData.protocol === 'POP3' ? colors.primary : colors.foreground }}>
                   POP3
                 </Text>
                 <Text style={{ fontSize: 10.5, color: colors.mutedForeground, marginTop: 2 }}>
@@ -601,8 +634,8 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
             {/* Incoming Server */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Server size={15} color="#6366f1" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#6366f1' }]}>
+              <Server size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Incoming Server ({formData.protocol})
               </Text>
             </View>
@@ -655,7 +688,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 onPress={() => setFormData((prev) => ({ ...prev, useSSL: !prev.useSSL }))}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
-                <View style={[styles.switchTrackSmall, { backgroundColor: formData.useSSL ? '#6366f1' : '#cbd5e1' }]}>
+                <View style={[styles.switchTrackSmall, { backgroundColor: formData.useSSL ? colors.primary : '#cbd5e1' }]}>
                   <View style={[styles.switchThumbSmall, { transform: [{ translateX: formData.useSSL ? 14 : 2 }] }]} />
                 </View>
                 <Text style={{ fontSize: 11.5, color: colors.foreground }}>Use SSL/TLS</Text>
@@ -665,7 +698,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 onPress={() => setFormData((prev) => ({ ...prev, useSTARTTLS: !prev.useSTARTTLS }))}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
               >
-                <View style={[styles.switchTrackSmall, { backgroundColor: formData.useSTARTTLS ? '#6366f1' : '#cbd5e1' }]}>
+                <View style={[styles.switchTrackSmall, { backgroundColor: formData.useSTARTTLS ? colors.primary : '#cbd5e1' }]}>
                   <View style={[styles.switchThumbSmall, { transform: [{ translateX: formData.useSTARTTLS ? 14 : 2 }] }]} />
                 </View>
                 <Text style={{ fontSize: 11.5, color: colors.foreground }}>Use STARTTLS</Text>
@@ -674,8 +707,8 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
             {/* Outgoing Server */}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Server size={15} color="#6366f1" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#6366f1' }]}>
+              <Server size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Outgoing Server (SMTP)
               </Text>
             </View>
@@ -737,7 +770,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
               <TouchableOpacity
                 onPress={handleSave}
-                style={[styles.modalSubmitBtn, { backgroundColor: '#6366f1' }]}
+                style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
               >
                 <Save size={14} color="#ffffff" />
                 <Text style={styles.modalSubmitBtnText}>
@@ -854,7 +887,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         {/* Header */}
         <View style={styles.cardHeaderArea}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Sparkles size={22} color="#8b5cf6" />
+            <Sparkles size={22} color={colors.primary} />
             <Text style={[styles.cardTitleText, { color: colors.foreground }]}>
               AI API Credentials Manager
             </Text>
@@ -872,10 +905,10 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
             </Text>
             <TouchableOpacity
               onPress={handleOpenAdd}
-              style={[styles.outlineActionBtn, { borderColor: '#c084fc' }]}
+              style={[styles.outlineActionBtn, { borderColor: colors.primary }]}
             >
-              <Plus size={14} color="#8b5cf6" />
-              <Text style={{ fontSize: 12.5, fontWeight: '600', color: '#8b5cf6' }}>
+              <Plus size={14} color={colors.primary} />
+              <Text style={{ fontSize: 12.5, fontWeight: '600', color: colors.primary }}>
                 + Add your first AI API credential
               </Text>
             </TouchableOpacity>
@@ -897,10 +930,10 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 <View
                   style={[
                     styles.accountIconBox,
-                    { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : '#f3e8ff' },
+                    { backgroundColor: isDark ? colors.primary + '20' : colors.primary + '15' },
                   ]}
                 >
-                  <Sparkles size={18} color="#8b5cf6" />
+                  <Sparkles size={18} color={colors.primary} />
                 </View>
 
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -909,7 +942,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                       {account.name}
                     </Text>
                     <View style={[styles.badgeTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#8b5cf6' }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>
                         {account.modelName}
                       </Text>
                     </View>
@@ -925,7 +958,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                     onPress={() => handleToggle(account.id)}
                     style={[
                       styles.switchTrack,
-                      { backgroundColor: account.isEnabled ? '#8b5cf6' : isDark ? '#334155' : '#cbd5e1' },
+                      { backgroundColor: account.isEnabled ? colors.primary : isDark ? '#334155' : '#cbd5e1' },
                     ]}
                   >
                     <View
@@ -937,7 +970,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => handleOpenEdit(account)} style={styles.iconActionBtn}>
-                    <Edit size={16} color="#3b82f6" />
+                    <Edit size={16} color={colors.primary} />
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => handleDelete(account.id)} style={styles.iconActionBtn}>
@@ -953,10 +986,10 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleOpenAdd}
-          style={[styles.primaryActionButton, { backgroundColor: '#8b5cf6', marginTop: 18 }]}
+          style={[styles.primaryActionButton, { backgroundColor: colors.primary, marginTop: 18 }]}
         >
           <Plus size={18} color="#ffffff" />
-          <Text style={styles.primaryActionText}>+ Add AI API Credential</Text>
+          <Text style={styles.primaryActionText}>Add AI API Credential</Text>
         </TouchableOpacity>
       </View>
 
@@ -974,7 +1007,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
           >
             <View style={styles.modalHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={20} color="#8b5cf6" />
+                <Sparkles size={20} color={colors.primary} />
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {editingId ? 'Edit AI Credential' : 'Add AI API Credential'}
                 </Text>
@@ -988,8 +1021,8 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
             </Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Lock size={15} color="#8b5cf6" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#8b5cf6' }]}>
+              <Lock size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Account Credentials
               </Text>
             </View>
@@ -1027,7 +1060,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                     styles.presetPill,
                     {
                       backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                      borderColor: formData.model === m.id ? '#8b5cf6' : isDark ? '#334155' : '#e2e8f0',
+                      borderColor: formData.model === m.id ? colors.primary : isDark ? '#334155' : '#e2e8f0',
                       borderWidth: formData.model === m.id ? 1.5 : 1,
                       paddingVertical: 6,
                     },
@@ -1037,7 +1070,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                     style={{
                       fontSize: 12,
                       fontWeight: '600',
-                      color: formData.model === m.id ? '#8b5cf6' : colors.foreground,
+                      color: formData.model === m.id ? colors.primary : colors.foreground,
                     }}
                   >
                     {m.name}
@@ -1095,7 +1128,7 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
               <TouchableOpacity
                 onPress={handleSave}
-                style={[styles.modalSubmitBtn, { backgroundColor: '#8b5cf6' }]}
+                style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
               >
                 <Save size={14} color="#ffffff" />
                 <Text style={styles.modalSubmitBtnText}>
@@ -1207,7 +1240,7 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
         {/* Header */}
         <View style={styles.cardHeaderArea}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <MessageSquare size={22} color="#10b981" />
+            <MessageSquare size={22} color={colors.primary} />
             <Text style={[styles.cardTitleText, { color: colors.foreground }]}>
               Chat Credentials Manager
             </Text>
@@ -1234,10 +1267,10 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
               <View
                 style={[
                   styles.accountIconBox,
-                  { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#dcfce7' },
+                  { backgroundColor: isDark ? colors.primary + '20' : colors.primary + '15' },
                 ]}
               >
-                <MessageSquare size={18} color="#10b981" />
+                <MessageSquare size={18} color={colors.primary} />
               </View>
 
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -1255,7 +1288,7 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
                   onPress={() => handleToggle(account.id)}
                   style={[
                     styles.switchTrack,
-                    { backgroundColor: account.isEnabled ? '#10b981' : isDark ? '#334155' : '#cbd5e1' },
+                    { backgroundColor: account.isEnabled ? colors.primary : isDark ? '#334155' : '#cbd5e1' },
                   ]}
                 >
                   <View
@@ -1267,7 +1300,7 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => handleOpenEdit(account)} style={styles.iconActionBtn}>
-                  <Edit size={16} color="#3b82f6" />
+                  <Edit size={16} color={colors.primary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => handleDelete(account.id)} style={styles.iconActionBtn}>
@@ -1282,14 +1315,14 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleOpenAdd}
-          style={[styles.primaryActionButton, { backgroundColor: '#10b981', marginTop: 18 }]}
+          style={[styles.primaryActionButton, { backgroundColor: colors.primary, marginTop: 18 }]}
         >
           <Plus size={18} color="#ffffff" />
-          <Text style={styles.primaryActionText}>+ Add Chat Supabase Credential</Text>
+          <Text style={styles.primaryActionText}>Add Chat Supabase Credential</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Modal Dialog matching screenshot 4 */}
+      {/* Modal Dialog */}
       {modalOpen && (
         <View style={styles.modalOverlay}>
           <View
@@ -1303,7 +1336,7 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
           >
             <View style={styles.modalHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <MessageSquare size={20} color="#10b981" />
+                <MessageSquare size={20} color={colors.primary} />
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {editingId ? 'Edit Chat Credential' : 'Add Chat Supabase Credential'}
                 </Text>
@@ -1317,8 +1350,8 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
             </Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Lock size={15} color="#10b981" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#10b981' }]}>
+              <Lock size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Account Credentials
               </Text>
             </View>
@@ -1419,7 +1452,7 @@ export function ChatApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number 
 
               <TouchableOpacity
                 onPress={handleSave}
-                style={[styles.modalSubmitBtn, { backgroundColor: '#10b981' }]}
+                style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
               >
                 <Save size={14} color="#ffffff" />
                 <Text style={styles.modalSubmitBtnText}>
@@ -1541,7 +1574,7 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         {/* Header */}
         <View style={styles.cardHeaderArea}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <Database size={22} color="#3b82f6" />
+            <Database size={22} color={colors.primary} />
             <Text style={[styles.cardTitleText, { color: colors.foreground }]}>
               Supabase Credentials Manager
             </Text>
@@ -1568,10 +1601,10 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
               <View
                 style={[
                   styles.accountIconBox,
-                  { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : '#dbeafe' },
+                  { backgroundColor: isDark ? colors.primary + '20' : colors.primary + '15' },
                 ]}
               >
-                <Database size={18} color="#3b82f6" />
+                <Database size={18} color={colors.primary} />
               </View>
 
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -1589,7 +1622,7 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                   onPress={() => handleToggle(account.id)}
                   style={[
                     styles.switchTrack,
-                    { backgroundColor: account.isEnabled ? '#3b82f6' : isDark ? '#334155' : '#cbd5e1' },
+                    { backgroundColor: account.isEnabled ? colors.primary : isDark ? '#334155' : '#cbd5e1' },
                   ]}
                 >
                   <View
@@ -1601,7 +1634,7 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => handleOpenEdit(account)} style={styles.iconActionBtn}>
-                  <Edit size={16} color="#3b82f6" />
+                  <Edit size={16} color={colors.primary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => handleDelete(account.id)} style={styles.iconActionBtn}>
@@ -1616,10 +1649,10 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={handleOpenAdd}
-          style={[styles.primaryActionButton, { backgroundColor: '#3b82f6', marginTop: 18 }]}
+          style={[styles.primaryActionButton, { backgroundColor: colors.primary, marginTop: 18 }]}
         >
           <Plus size={18} color="#ffffff" />
-          <Text style={styles.primaryActionText}>+ Add Storage Credential</Text>
+          <Text style={styles.primaryActionText}>Add Storage Credential</Text>
         </TouchableOpacity>
       </View>
 
@@ -1637,7 +1670,7 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
           >
             <View style={styles.modalHeaderRow}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Database size={20} color="#3b82f6" />
+                <Database size={20} color={colors.primary} />
                 <Text style={[styles.modalTitle, { color: colors.foreground }]}>
                   {editingId ? 'Edit Storage Credential' : 'Add Storage Credential'}
                 </Text>
@@ -1651,8 +1684,8 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
             </Text>
 
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 }}>
-              <Lock size={15} color="#3b82f6" />
-              <Text style={[styles.sectionHeaderTitle, { color: '#3b82f6' }]}>
+              <Lock size={15} color={colors.primary} />
+              <Text style={[styles.sectionHeaderTitle, { color: colors.primary }]}>
                 Account Credentials
               </Text>
             </View>
@@ -1789,7 +1822,7 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
               <TouchableOpacity
                 onPress={handleSave}
-                style={[styles.modalSubmitBtn, { backgroundColor: '#3b82f6' }]}
+                style={[styles.modalSubmitBtn, { backgroundColor: colors.primary }]}
               >
                 <Save size={14} color="#ffffff" />
                 <Text style={styles.modalSubmitBtnText}>
@@ -1823,7 +1856,7 @@ export function AppSettingsPagePreview({ stateIndex = 0 }: { stateIndex?: number
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Top Navigation Tabs Header matching screenshot 1 & 2 */}
+      {/* Top Navigation Tabs Header */}
       <View
         style={[
           styles.topNavBar,
@@ -1847,7 +1880,7 @@ export function AppSettingsPagePreview({ stateIndex = 0 }: { stateIndex?: number
                 style={[
                   styles.tabNavItem,
                   isActive && {
-                    borderBottomColor: '#6366f1',
+                    borderBottomColor: colors.primary,
                     borderBottomWidth: 2.5,
                   },
                 ]}
@@ -1856,8 +1889,8 @@ export function AppSettingsPagePreview({ stateIndex = 0 }: { stateIndex?: number
                   style={[
                     styles.tabNavText,
                     {
-                      color: isActive ? (isDark ? '#ffffff' : '#0f172a') : colors.mutedForeground,
-                      fontWeight: isActive ? '700' : '500',
+                      color: isActive ? colors.primary : colors.mutedForeground,
+                      fontWeight: isActive ? '600' : '500',
                     },
                   ]}
                 >
@@ -1872,10 +1905,10 @@ export function AppSettingsPagePreview({ stateIndex = 0 }: { stateIndex?: number
       {/* Main Content Area */}
       <ScrollView
         style={{ flex: 1, width: '100%' }}
-        contentContainerStyle={{ padding: 16, alignItems: 'center' }}
+        contentContainerStyle={{ padding: 20, width: '100%' }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ width: '100%', maxWidth: 760 }}>
+        <View style={{ width: '100%' }}>
           {activeTab === 'email' && <EmailSettingPreview />}
           {activeTab === 'ai' && <AiApiSettingPreview />}
           {activeTab === 'chat' && <ChatApiSettingPreview />}
@@ -1901,10 +1934,9 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     width: '100%',
-    maxWidth: 720,
-    alignSelf: 'center',
   },
   mainCard: {
+    width: '100%',
     borderRadius: 16,
     borderWidth: 1,
     padding: 20,
@@ -1918,13 +1950,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cardTitleText: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.2,
+    fontSize: 15.5,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
+    letterSpacing: -0.1,
   },
   cardSubtitleText: {
     fontSize: 12.5,
-    lineHeight: 17,
+    fontWeight: '400',
+    fontFamily: 'Open Sans',
+    lineHeight: 18,
   },
   accountRowCard: {
     flexDirection: 'row',
@@ -1942,11 +1977,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   accountEmailTitle: {
-    fontSize: 13.5,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
   accountServerSubtitle: {
-    fontSize: 11.5,
+    fontSize: 12,
+    fontWeight: '400',
+    fontFamily: 'Open Sans',
     marginTop: 2,
   },
   badgeTag: {
@@ -1993,16 +2031,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderRadius: 10,
-    shadowColor: '#4f46e5',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
   primaryActionText: {
     color: '#ffffff',
     fontSize: 13.5,
-    fontWeight: '700',
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
   emptyDashedBox: {
     borderWidth: 1.5,
@@ -2032,10 +2071,9 @@ const styles = StyleSheet.create({
   topTabsScroll: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     width: '100%',
-    minWidth: 460,
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     gap: 24,
   },
   tabNavItem: {
@@ -2044,6 +2082,7 @@ const styles = StyleSheet.create({
   },
   tabNavText: {
     fontSize: 13.5,
+    fontFamily: 'Open Sans',
   },
   // MODAL STYLES
   modalOverlay: {
@@ -2076,21 +2115,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   modalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15.5,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
   modalSubtitle: {
     fontSize: 12,
+    fontWeight: '400',
+    fontFamily: 'Open Sans',
     marginTop: 4,
     lineHeight: 16,
   },
   sectionLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
   sectionHeaderTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
   presetPill: {
     flex: 1,
@@ -2107,8 +2151,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   inputLabel: {
-    fontSize: 11.5,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: 'Open Sans',
     marginBottom: 5,
   },
   formInput: {
@@ -2116,7 +2161,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     paddingHorizontal: 10,
-    fontSize: 12.5,
+    fontSize: 13,
+    fontFamily: 'Open Sans',
   },
   modalFooterRow: {
     flexDirection: 'row',
@@ -2134,8 +2180,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   secondaryBtnText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
+    fontFamily: 'Open Sans',
   },
   modalSubmitBtn: {
     flexDirection: 'row',
@@ -2147,7 +2194,8 @@ const styles = StyleSheet.create({
   },
   modalSubmitBtnText: {
     color: '#ffffff',
-    fontSize: 12.5,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
   },
 });

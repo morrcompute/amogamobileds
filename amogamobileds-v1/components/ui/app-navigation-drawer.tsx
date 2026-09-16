@@ -82,6 +82,9 @@ export interface AppNavigationDrawerProps {
   onPreferencesPress?: () => void;
   onPreferencePress?: () => void;
   onSettingsPress?: () => void;
+  onSettingPress?: () => void;
+  onAppSettingsPress?: () => void;
+  onAppSettingPress?: () => void;
   onNotificationsPress?: () => void;
   onSignOut?: () => void;
   primaryColor?: string;
@@ -108,6 +111,8 @@ export function AppNavigationDrawer({
   onPreferencesPress,
   onPreferencePress,
   onSettingsPress,
+  onAppSettingsPress,
+  onAppSettingPress,
   onNotificationsPress,
   onSignOut,
   primaryColor,
@@ -212,7 +217,7 @@ export function AppNavigationDrawer({
             {/* Header: Workspace branding & Close X */}
             <View style={styles.drawerHeader}>
               <View style={styles.headerLeft}>
-                <View style={[styles.headerLogo, { backgroundColor: isDark ? '#27272a' : '#18181b' }]}>
+                <View style={[styles.headerLogo, { backgroundColor: activeBg, shadowColor: activeBg }]}>
                   <Command size={18} color="#ffffff" strokeWidth={2.4} />
                 </View>
                 <View style={styles.headerTitles}>
@@ -272,7 +277,7 @@ export function AppNavigationDrawer({
                     style={[
                       styles.menuItemRow,
                       isActive && {
-                        backgroundColor: isDark ? '#27272a' : '#e4e4e7',
+                        backgroundColor: isDark ? activeBg + '28' : activeBg + '18',
                       },
                     ]}
                     accessibilityRole="button"
@@ -284,9 +289,7 @@ export function AppNavigationDrawer({
                           size={18}
                           color={
                             isActive
-                              ? isDark
-                                ? '#ffffff'
-                                : '#0f172a'
+                              ? activeBg
                               : isDark
                               ? '#94a3b8'
                               : '#64748b'
@@ -299,13 +302,11 @@ export function AppNavigationDrawer({
                           styles.itemLabel,
                           {
                             color: isActive
-                              ? isDark
-                                ? '#ffffff'
-                                : '#0f172a'
+                              ? activeBg
                               : isDark
                               ? '#e4e4e7'
                               : '#1e293b',
-                            fontWeight: isActive ? '600' : '500',
+                            fontWeight: isActive ? '700' : '500',
                           },
                         ]}
                       >
@@ -318,7 +319,7 @@ export function AppNavigationDrawer({
                       <View
                         style={[
                           styles.activeDot,
-                          { backgroundColor: isDark ? '#ffffff' : '#0f172a' },
+                          { backgroundColor: activeBg },
                         ]}
                       />
                     )}
@@ -485,6 +486,7 @@ export function AppNavigationDrawer({
                         else if (item.id === 'theme') onThemePress?.();
                         else if (item.id === 'preferences') (onPreferencesPress || onPreferencePress)?.();
                         else if (item.id === 'settings') onSettingsPress?.();
+                        else if (item.id === 'app-settings' || item.id === 'appsettings' || item.id === 'app_settings') (onAppSettingsPress || onAppSettingPress || onSettingsPress)?.();
                         else if (item.id === 'notifications') onNotificationsPress?.();
                         else if (item.id === 'signout' || item.isDanger) onSignOut?.();
                         onProfileMenuSelect?.(item.id, item);

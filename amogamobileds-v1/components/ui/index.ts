@@ -55,10 +55,12 @@ export * from './app-navigation-drawer';
 export * from './coming-soon-view';
 export * from './theme-settings-drawer';
 export * from './preferences-drawer';
+export * from './app-settings-view';
 export * from './page-header';
 export * from './full-page-map';
 export * from './full-page-calendar';
 export * from './calendar-app-view';
+export * from './email-app-view';
 export * from './ai-chat';
 export * from './video';
 export * from './view';
@@ -78,6 +80,9 @@ export { default as app_preference_settings } from './app_preference_settings.js
 export { default as app_preference_settings_json } from './app_preference_settings.json';
 export { default as calendar_tasks_json } from './calendar-tasks.json';
 export { default as app_ai_settings_json } from './app_ai_settings.json';
+export { default as app_email_settings_json } from './app_email_settings.json';
+export { default as email_messages_json } from './email-messages.json';
+export * from './email-client';
 
 
 

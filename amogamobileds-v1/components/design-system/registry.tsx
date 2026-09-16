@@ -180,6 +180,7 @@ import {
   Stats15GrowthProjectionPreview,
 } from './previews/StatsPreviews';
 import {
+  EmailComposePreview,
   CompleteMailPagePreview,
   EmailViewPreview,
   EmailDetailPreview,
@@ -3686,6 +3687,20 @@ export function Stats15Demo() {
   /* =========================================================================
      20. MAIL
      ========================================================================= */
+  {
+    id: 'email-compose',
+    name: 'Email Compose (New Message)',
+    file: 'email-compose.tsx',
+    category: 'Mail',
+    tag: 'MAIL',
+    description: 'New email composition screen matching design system: header with Back to Message navigation, template selector dropdown, subject and recipient fields with Cc/Bcc toggles, rich formatting toolbar, document attachment cards with download/preview/remove actions, full-width attach file button, and Cancel, Save as Draft, and Send actions.',
+    Preview: EmailComposePreview,
+    codeSnippet: `import { EmailComposePreview } from 'amogamobileds-v1';
+
+export function EmailComposeDemo() {
+  return <EmailComposePreview />;
+}`,
+  },
   {
     id: 'complete-mail-page',
     name: 'Complete Mail Page (Inbox & Thread)',

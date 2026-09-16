@@ -30,6 +30,12 @@
     "color": "#64748b"
   },
   {
+    "id": "app-settings",
+    "label": "App Settings",
+    "icon": "SlidersHorizontal",
+    "color": "#64748b"
+  },
+  {
     "id": "notifications",
     "label": "Notifications",
     "icon": "Bell",
