@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -863,73 +864,90 @@ export function AiApiSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
           </Text>
         </View>
 
-        {/* Credentials List */}
-        <View style={{ gap: 12, marginTop: 16 }}>
-          {aiAccounts.map((account) => (
-            <View
-              key={account.id}
-              style={[
-                styles.accountRowCard,
-                {
-                  backgroundColor: isDark ? '#161f30' : '#ffffff',
-                  borderColor: isDark ? '#1e293b' : '#f1f5f9',
-                  opacity: account.isEnabled ? 1 : 0.6,
-                },
-              ]}
+        {/* Credentials List or Empty State */}
+        {aiAccounts.length === 0 ? (
+          <View style={[styles.emptyDashedBox, { borderColor: isDark ? '#334155' : '#e2e8f0', backgroundColor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#fafafa' }]}>
+            <Text style={{ fontSize: 13, color: colors.mutedForeground, marginBottom: 12 }}>
+              No AI API credentials added yet.
+            </Text>
+            <TouchableOpacity
+              onPress={handleOpenAdd}
+              style={[styles.outlineActionBtn, { borderColor: '#c084fc' }]}
             >
+              <Plus size={14} color="#8b5cf6" />
+              <Text style={{ fontSize: 12.5, fontWeight: '600', color: '#8b5cf6' }}>
+                + Add your first AI API credential
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={{ gap: 12, marginTop: 16 }}>
+            {aiAccounts.map((account) => (
               <View
+                key={account.id}
                 style={[
-                  styles.accountIconBox,
-                  { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : '#f3e8ff' },
+                  styles.accountRowCard,
+                  {
+                    backgroundColor: isDark ? '#161f30' : '#ffffff',
+                    borderColor: isDark ? '#1e293b' : '#f1f5f9',
+                    opacity: account.isEnabled ? 1 : 0.6,
+                  },
                 ]}
               >
-                <Sparkles size={18} color="#8b5cf6" />
-              </View>
-
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={[styles.accountEmailTitle, { color: colors.foreground }]} numberOfLines={1}>
-                    {account.name}
-                  </Text>
-                  <View style={[styles.badgeTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#8b5cf6' }}>
-                      {account.modelName}
-                    </Text>
-                  </View>
-                </View>
-                <Text style={[styles.accountServerSubtitle, { color: colors.mutedForeground, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }]} numberOfLines={1}>
-                  {maskKey(account.apiKey)}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleToggle(account.id)}
+                <View
                   style={[
-                    styles.switchTrack,
-                    { backgroundColor: account.isEnabled ? '#8b5cf6' : isDark ? '#334155' : '#cbd5e1' },
+                    styles.accountIconBox,
+                    { backgroundColor: isDark ? 'rgba(139, 92, 246, 0.15)' : '#f3e8ff' },
                   ]}
                 >
-                  <View
+                  <Sparkles size={18} color="#8b5cf6" />
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={[styles.accountEmailTitle, { color: colors.foreground }]} numberOfLines={1}>
+                      {account.name}
+                    </Text>
+                    <View style={[styles.badgeTag, { backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }]}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#8b5cf6' }}>
+                        {account.modelName}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={[styles.accountServerSubtitle, { color: colors.mutedForeground, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }]} numberOfLines={1}>
+                    {maskKey(account.apiKey)}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => handleToggle(account.id)}
                     style={[
-                      styles.switchThumb,
-                      { transform: [{ translateX: account.isEnabled ? 18 : 2 }] },
+                      styles.switchTrack,
+                      { backgroundColor: account.isEnabled ? '#8b5cf6' : isDark ? '#334155' : '#cbd5e1' },
                     ]}
-                  />
-                </TouchableOpacity>
+                  >
+                    <View
+                      style={[
+                        styles.switchThumb,
+                        { transform: [{ translateX: account.isEnabled ? 18 : 2 }] },
+                      ]}
+                    />
+                  </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleOpenEdit(account)} style={styles.iconActionBtn}>
-                  <Edit size={16} color="#3b82f6" />
-                </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleOpenEdit(account)} style={styles.iconActionBtn}>
+                    <Edit size={16} color="#3b82f6" />
+                  </TouchableOpacity>
 
-                <TouchableOpacity onPress={() => handleDelete(account.id)} style={styles.iconActionBtn}>
-                  <Trash2 size={16} color="#ef4444" />
-                </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(account.id)} style={styles.iconActionBtn}>
+                    <Trash2 size={16} color="#ef4444" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
         {/* Add Primary Action */}
         <TouchableOpacity
@@ -1786,8 +1804,90 @@ export function FilesSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
   );
 }
 
+// =========================================================================
+// 5. APP SETTINGS FULL PAGE (WITH TABS FOR PAGE CATEGORY)
+// =========================================================================
+
+export function AppSettingsPagePreview({ stateIndex = 0 }: { stateIndex?: number }) {
+  const { colors, resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+
+  const [activeTab, setActiveTab] = useState<'files' | 'chat' | 'ai' | 'email'>('email');
+
+  const navTabs: { id: 'files' | 'chat' | 'ai' | 'email'; label: string }[] = [
+    { id: 'files', label: 'Files' },
+    { id: 'chat', label: 'Chat' },
+    { id: 'ai', label: 'AI API' },
+    { id: 'email', label: 'Email' },
+  ];
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Top Navigation Tabs Header matching screenshot 1 & 2 */}
+      <View
+        style={[
+          styles.topNavBar,
+          {
+            borderBottomColor: colors.border,
+            backgroundColor: isDark ? '#0f172a' : '#ffffff',
+          },
+        ]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.topTabsScroll}
+        >
+          {navTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                onPress={() => setActiveTab(tab.id)}
+                style={[
+                  styles.tabNavItem,
+                  isActive && {
+                    borderBottomColor: '#6366f1',
+                    borderBottomWidth: 2.5,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tabNavText,
+                    {
+                      color: isActive ? (isDark ? '#ffffff' : '#0f172a') : colors.mutedForeground,
+                      fontWeight: isActive ? '700' : '500',
+                    },
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Main Content Area */}
+      <ScrollView
+        style={{ flex: 1, width: '100%' }}
+        contentContainerStyle={{ padding: 16, alignItems: 'center' }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={{ width: '100%', maxWidth: 760 }}>
+          {activeTab === 'email' && <EmailSettingPreview />}
+          {activeTab === 'ai' && <AiApiSettingPreview />}
+          {activeTab === 'chat' && <ChatApiSettingPreview />}
+          {activeTab === 'files' && <FilesSettingPreview />}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
 export function AppSettingsPreviews({ entry }: { entry?: GalleryEntry }) {
-  return <EmailSettingPreview />;
+  return <AppSettingsPagePreview />;
 }
 
 // =========================================================================
@@ -1795,6 +1895,10 @@ export function AppSettingsPreviews({ entry }: { entry?: GalleryEntry }) {
 // =========================================================================
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: '100%',
+  },
   cardWrapper: {
     width: '100%',
     maxWidth: 720,
@@ -1899,6 +2003,47 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13.5,
     fontWeight: '700',
+  },
+  emptyDashedBox: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  outlineActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  // TOP NAV TABS
+  topNavBar: {
+    width: '100%',
+    borderBottomWidth: 1,
+    paddingTop: 8,
+  },
+  topTabsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    minWidth: 460,
+    paddingHorizontal: 16,
+    gap: 24,
+  },
+  tabNavItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  tabNavText: {
+    fontSize: 13.5,
   },
   // MODAL STYLES
   modalOverlay: {

@@ -191,6 +191,7 @@ import {
   AiApiSettingPreview,
   ChatApiSettingPreview,
   FilesSettingPreview,
+  AppSettingsPagePreview,
 } from './previews/AppSettingsPreviews';
 
 export type ComponentCategory =
@@ -3944,6 +3945,20 @@ export function AiChatScreen() {
       <AiChat />
     </View>
   );
+}`,
+  },
+  {
+    id: 'page-app-settings',
+    name: 'App Settings',
+    file: 'app-settings-page.tsx',
+    category: 'Pages',
+    tag: 'PAGE',
+    description: 'Full multi-tab Application Settings screen featuring top navigation tabs (Files, Chat, AI API, Email), interactive modals, provider presets, and environment configuration managers.',
+    Preview: AppSettingsPagePreview,
+    codeSnippet: `import { AppSettingsPagePreview } from 'amogamobileds-v1';
+
+export function AppSettingsScreen() {
+  return <AppSettingsPagePreview />;
 }`,
   },
 ];
