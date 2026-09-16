@@ -71,14 +71,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
 
+    const safetyTimer = setTimeout(() => {
+      if (active) setLoading(false);
+    }, 1500);
+
     // Reads the persisted session from LargeSecureStore. Everything renders a
     // spinner until this resolves, so a returning user never sees the sign-in
     // screen flash before their session loads.
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        clearTimeout(safetyTimer);
+        setSession(data?.session || null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.warn('Error fetching Supabase session:', err);
+        if (!active) return;
+        clearTimeout(safetyTimer);
+        setLoading(false);
+      });
 
     // Fires on sign-in, sign-out, token refresh, and user updates — including
     // ones triggered on another tab or by a deep link below.
@@ -86,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return;
+      clearTimeout(safetyTimer);
       setSession(nextSession);
       setLoading(false);
     });
