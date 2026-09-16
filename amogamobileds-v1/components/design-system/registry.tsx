@@ -186,6 +186,12 @@ import {
   EmailEditorPreview,
   EmailCardItemPreview,
 } from './previews/MailPreviews';
+import {
+  EmailSettingPreview,
+  AiApiSettingPreview,
+  ChatApiSettingPreview,
+  FilesSettingPreview,
+} from './previews/AppSettingsPreviews';
 
 export type ComponentCategory =
   | 'Primitives'
@@ -208,6 +214,7 @@ export type ComponentCategory =
   | 'Stats'
   | 'Mail'
   | 'Auth'
+  | 'App Settings'
   | 'Pages';
 
 export interface ComponentItem {
@@ -3749,7 +3756,66 @@ export function EmailCardDemo() {
 }`,
   },
   /* =========================================================================
-     21. PAGES & SCREENS
+     21. APP SETTINGS
+     ========================================================================= */
+  {
+    id: 'email-setting-manager',
+    name: 'Email Settings',
+    file: 'email-setting.tsx',
+    category: 'App Settings',
+    tag: 'SETTINGS',
+    description: 'Email accounts manager card with active toggle switches, edit/delete actions, and a full interactive modal dialog with Gmail/Outlook/Yahoo provider presets, IMAP/POP3 protocol selectors, server host & port configuration, and SSL/STARTTLS toggles.',
+    Preview: EmailSettingPreview,
+    codeSnippet: `import { EmailSettingPreview } from 'amogamobileds-v1';
+
+export function EmailSettingsDemo() {
+  return <EmailSettingPreview />;
+}`,
+  },
+  {
+    id: 'ai-api-setting-manager',
+    name: 'AI API Settings',
+    file: 'ai-api-setting.tsx',
+    category: 'App Settings',
+    tag: 'SETTINGS',
+    description: 'AI API credentials manager for OpenRouter and direct model integrations (Gemini 2.5 Flash, GPT-4o, Claude 3.5 Sonnet, DeepSeek Chat, Llama 3.3 70B) with masked API keys, model badges, active toggles, and add/edit modal dialog.',
+    Preview: AiApiSettingPreview,
+    codeSnippet: `import { AiApiSettingPreview } from 'amogamobileds-v1';
+
+export function AiApiSettingsDemo() {
+  return <AiApiSettingPreview />;
+}`,
+  },
+  {
+    id: 'chat-api-setting-manager',
+    name: 'Chat API Settings',
+    file: 'chat-api-setting.tsx',
+    category: 'App Settings',
+    tag: 'SETTINGS',
+    description: 'Chat Supabase project credentials manager with connection name, project URL, masked anon key with reveal toggle, active switch toggles, and modal dialog matching emerald theme.',
+    Preview: ChatApiSettingPreview,
+    codeSnippet: `import { ChatApiSettingPreview } from 'amogamobileds-v1';
+
+export function ChatApiSettingsDemo() {
+  return <ChatApiSettingPreview />;
+}`,
+  },
+  {
+    id: 'files-setting-manager',
+    name: 'Files Settings',
+    file: 'files-setting.tsx',
+    category: 'App Settings',
+    tag: 'SETTINGS',
+    description: 'Files and Supabase Storage credentials manager with project URL, masked publishable key, bucket name (e.g. chat-files), and default upload folder configuration.',
+    Preview: FilesSettingPreview,
+    codeSnippet: `import { FilesSettingPreview } from 'amogamobileds-v1';
+
+export function FilesSettingsDemo() {
+  return <FilesSettingPreview />;
+}`,
+  },
+  /* =========================================================================
+     22. PAGES & SCREENS
      ========================================================================= */
   {
     id: 'page-preference',

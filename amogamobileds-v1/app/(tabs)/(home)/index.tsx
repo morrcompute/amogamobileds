@@ -37,6 +37,7 @@ import {
   Receipt,
   TrendingUp,
   Mail,
+  Settings,
 } from 'lucide-react-native';
 import {
   COMPONENTS,
@@ -74,6 +75,7 @@ const CATEGORY_ITEMS: CategoryConfig[] = [
   { name: 'Stats', label: 'Stats', Icon: TrendingUp },
   { name: 'Mail', label: 'Mail', Icon: Mail },
   { name: 'Auth', label: 'Auth', Icon: ShieldCheck },
+  { name: 'App Settings', label: 'Settings', Icon: Settings },
   { name: 'Pages', label: 'Pages', Icon: SlidersHorizontal },
 ];
 
