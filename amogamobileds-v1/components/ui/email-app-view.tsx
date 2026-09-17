@@ -50,6 +50,7 @@ import {
   Save,
   RefreshCw,
 } from 'lucide-react-native';
+import { Skeleton } from './skeleton';
 import { useTheme } from '../../providers/theme-provider';
 import defaultEmailsData from './email-messages.json';
 import {
@@ -99,9 +100,37 @@ export interface EmailAppViewProps {
   showMobileHeader?: boolean;
   rightOverlayView?: React.ReactNode;
   onCloseRightPane?: () => void;
+  onViewStateChange?: (state: { isDetailOpen: boolean; isComposing: boolean }) => void;
 }
 
 const TABS: EmailTabType[] = ['Inbox', 'Sent', 'Folder', 'Contact', 'Groups'];
+
+function EmailCardSkeleton({ isDark, borderColor }: { isDark: boolean; borderColor: string }) {
+  return (
+    <View
+      style={[
+        styles.emailCardItem,
+        {
+          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#f8fafc',
+          borderColor,
+          width: '100%',
+        },
+      ]}
+    >
+      <View style={styles.emailCardHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Skeleton width={110} height={14} variant="rounded" style={{ borderRadius: 4 }} />
+        </View>
+        <Skeleton width={40} height={12} variant="rounded" style={{ borderRadius: 4 }} />
+      </View>
+      <View style={[styles.badgesRow, { marginVertical: 3 }]}>
+        <Skeleton width={46} height={18} variant="rounded" style={{ borderRadius: 4 }} />
+      </View>
+      <Skeleton width="82%" height={14} variant="rounded" style={{ borderRadius: 4, marginVertical: 2 }} />
+      <Skeleton width="64%" height={12} variant="rounded" style={{ borderRadius: 4 }} />
+    </View>
+  );
+}
 
 export function EmailAppView({
   initialTab = 'Inbox',
@@ -110,6 +139,7 @@ export function EmailAppView({
   showMobileHeader = true,
   rightOverlayView,
   onCloseRightPane,
+  onViewStateChange,
 }: EmailAppViewProps) {
   const { colors, resolvedMode } = useTheme();
   const isDark = resolvedMode === 'dark';
@@ -136,7 +166,7 @@ export function EmailAppView({
   const [showBcc, setShowBcc] = useState(false);
   const [composeCc, setComposeCc] = useState('');
   const [composeBcc, setComposeBcc] = useState('');
-  const [isLoadingLive, setIsLoadingLive] = useState(false);
+  const [isLoadingLive, setIsLoadingLive] = useState(true);
   const [isSendingLive, setIsSendingLive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -150,6 +180,14 @@ export function EmailAppView({
 
   // Mobile navigation state: false = list view, true = detail view
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
+
+  // Notify parent of view state changes (detail view or compose mode active)
+  useEffect(() => {
+    onViewStateChange?.({
+      isDetailOpen: isMobileDetailOpen,
+      isComposing: isComposing,
+    });
+  }, [isMobileDetailOpen, isComposing, onViewStateChange]);
 
   // Reset page on tab or search change
   useEffect(() => {
@@ -514,6 +552,8 @@ export function EmailAppView({
             style={[
               styles.leftEmailListPane,
               {
+                width: isDesktop ? 320 : '100%',
+                flex: isDesktop ? undefined : 1,
                 borderRightColor: borderColor,
                 borderRightWidth: isDesktop ? 1 : 0,
                 backgroundColor: containerBg,
@@ -622,9 +662,15 @@ export function EmailAppView({
             <ScrollView
               showsVerticalScrollIndicator={false}
               style={styles.emailListScroll}
-              contentContainerStyle={{ padding: 10, gap: 8 }}
+              contentContainerStyle={{ padding: 10, gap: 8, width: '100%' }}
             >
-              {paginatedEmails.length === 0 ? (
+              {isLoadingLive && filteredEmails.length === 0 ? (
+                <View style={{ gap: 8, width: '100%' }}>
+                  {Array.from({ length: 5 }).map((_, idx) => (
+                    <EmailCardSkeleton key={`skeleton-${idx}`} isDark={isDark} borderColor={borderColor} />
+                  ))}
+                </View>
+              ) : paginatedEmails.length === 0 ? (
                 <View style={styles.emptyListState}>
                   <Mail size={28} color={textMuted} strokeWidth={1.5} />
                   <Text style={[styles.emptyListText, { color: textMuted }]}>
@@ -769,13 +815,17 @@ export function EmailAppView({
                     New Message
                   </Text>
                   <TouchableOpacity
-                    onPress={() => setIsComposing(false)}
-                    style={styles.backToMsgBtn}
+                    onPress={() => {
+                      setIsComposing(false);
+                      if (!isDesktop) {
+                        setIsMobileDetailOpen(false);
+                      }
+                    }}
+                    style={styles.closeComposeBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close Compose"
                   >
-                    <ArrowLeft size={15} color={textMain} />
-                    <Text style={[styles.backToMsgText, { color: textMain }]}>
-                      Back to Message
-                    </Text>
+                    <X size={18} color={textMain} />
                   </TouchableOpacity>
                 </View>
 
@@ -1022,7 +1072,12 @@ export function EmailAppView({
                 {/* 7. Footer Actions */}
                 <View style={styles.composeFooterRow}>
                   <TouchableOpacity
-                    onPress={() => setIsComposing(false)}
+                    onPress={() => {
+                      setIsComposing(false);
+                      if (!isDesktop) {
+                        setIsMobileDetailOpen(false);
+                      }
+                    }}
                     style={[styles.outlineActionBtn, { borderColor }]}
                   >
                     <Text style={[styles.outlineActionBtnText, { color: textMain }]}>
@@ -1132,9 +1187,10 @@ export function EmailAppView({
                         if (onClose) onClose();
                       }}
                       style={styles.topActionBtn}
+                      accessibilityRole="button"
                       accessibilityLabel="Close"
                     >
-                      <X size={16} color={textMuted} />
+                      <X size={18} color={textMain} strokeWidth={2} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -1408,7 +1464,6 @@ const styles = StyleSheet.create({
 
   // ── Left Pane ─────────────────────────────────────────────────────────────
   leftEmailListPane: {
-    width: 320,
     height: '100%',
     display: 'flex',
     flexDirection: 'column',
@@ -1459,6 +1514,7 @@ const styles = StyleSheet.create({
 
   // Subtabs & Pagination
   tabsRow: {
+    width: '100%',
     height: 40,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1497,6 +1553,7 @@ const styles = StyleSheet.create({
 
   // Search & New Action Row
   searchAndNewRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1539,8 +1596,10 @@ const styles = StyleSheet.create({
   // Email Card Items
   emailListScroll: {
     flex: 1,
+    width: '100%',
   },
   emailCardItem: {
+    width: '100%',
     borderRadius: 10,
     borderWidth: 1,
     padding: 10,
@@ -1596,6 +1655,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   bottomPaginationRow: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1617,6 +1677,7 @@ const styles = StyleSheet.create({
   // ── Right Pane ────────────────────────────────────────────────────────────
   rightDetailPane: {
     flex: 1,
+    width: '100%',
     height: '100%',
   },
   detailScrollContent: {
@@ -1901,17 +1962,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Open Sans',
   },
-  backToMsgBtn: {
-    flexDirection: 'row',
+  closeComposeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-  },
-  backToMsgText: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    fontFamily: 'Open Sans',
+    justifyContent: 'center',
   },
   fieldSection: {
     gap: 6,
