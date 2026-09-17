@@ -47,19 +47,7 @@ export async function getActiveEmailConfig() {
         const active = accounts.find((a) => a.isEnabled) || accounts[0];
         if (active) {
           return {
-            email: active.email,
-            password: active.password || defaultEmailSettings.password,
-            smtp: {
-              host: active.outgoingServer || defaultEmailSettings.smtp.host,
-              port: active.outgoingPort || defaultEmailSettings.smtp.port,
-              secure: active.useSSL ?? defaultEmailSettings.smtp.secure,
-              requireTLS: active.useTLS ?? defaultEmailSettings.smtp.requireTLS,
-            },
-            imap: {
-              host: active.incomingServer || defaultEmailSettings.imap.host,
-              port: active.incomingPort || defaultEmailSettings.imap.port,
-              secure: active.useSSL ?? defaultEmailSettings.imap.secure,
-            },
+            email: active.email || defaultEmailSettings.email,
           };
         }
       }
@@ -70,21 +58,16 @@ export async function getActiveEmailConfig() {
 
   return {
     email: defaultEmailSettings.email,
-    password: defaultEmailSettings.password,
-    smtp: defaultEmailSettings.smtp,
-    imap: defaultEmailSettings.imap,
   };
 }
 
 export async function fetchLiveInbox(page: number = 1, limit: number = 20) {
   try {
-    const config = await getActiveEmailConfig();
     const baseUrl = getApiBaseUrl();
     const res = await fetch(`${baseUrl}/api/mail/inbox?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-mail-config': JSON.stringify(config),
       },
     });
 
@@ -102,13 +85,11 @@ export async function fetchLiveInbox(page: number = 1, limit: number = 20) {
 
 export async function fetchLiveSent(page: number = 1, limit: number = 20) {
   try {
-    const config = await getActiveEmailConfig();
     const baseUrl = getApiBaseUrl();
     const res = await fetch(`${baseUrl}/api/mail/sent?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'x-mail-config': JSON.stringify(config),
       },
     });
 
@@ -144,7 +125,6 @@ export async function sendLiveEmail(payload: EmailSendPayload) {
           content: att.url || att.content,
           contentType: att.type,
         })),
-        customConfig: config,
       }),
     });
 
@@ -167,14 +147,13 @@ export async function sendLiveEmail(payload: EmailSendPayload) {
 
 export async function testEmailConnection() {
   try {
-    const config = await getActiveEmailConfig();
     const baseUrl = getApiBaseUrl();
     const res = await fetch(`${baseUrl}/api/mail/test`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ customConfig: config }),
+      body: JSON.stringify({}),
     });
     const data = await res.json().catch(() => null);
     return data || { success: false, message: 'Invalid server response' };
