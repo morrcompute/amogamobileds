@@ -80,6 +80,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at timestamp with time zone DEFAULT now()
 );
 
+-- Ensure display_name and avatar_url columns exist for backward & forward compatibility
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS display_name text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url text;
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -95,12 +99,30 @@ CREATE POLICY "Users can insert their own profile" ON public.profiles
 CREATE POLICY "Users can update their own profile" ON public.profiles
     FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- Create a function to handle new user insertion
+-- Create a robust function to handle new user insertion safely
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 DECLARE
+  user_name text;
+  user_avatar text;
   old_user_id uuid;
 BEGIN
+  -- Extract username and avatar from all possible metadata fields
+  user_name := COALESCE(
+    new.raw_user_meta_data->>'display_name',
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'name',
+    CASE WHEN new.email IS NOT NULL AND new.email <> '' THEN split_part(new.email, '@', 1) ELSE NULL END,
+    new.phone,
+    'User'
+  );
+
+  user_avatar := COALESCE(
+    new.raw_user_meta_data->>'avatar_url',
+    new.raw_user_meta_data->>'picture',
+    new.raw_user_meta_data->>'avatar'
+  );
+
   -- Search for existing profile with the same email or mobile
   SELECT id INTO old_user_id FROM public.profiles 
   WHERE (email IS NOT NULL AND email <> '' AND email = new.email)
@@ -110,51 +132,57 @@ BEGIN
   IF old_user_id IS NOT NULL THEN
     -- Reconcile only if the ID has changed (new UUID assigned by auth)
     IF old_user_id <> new.id THEN
-      -- A. Create a temporary profile with the new UUID to satisfy foreign key constraints during reference migration
-      INSERT INTO public.profiles (id, name, email, avatar, company, mobile, status, online, offline, last_seen, updated_at)
-      SELECT new.id, name, email, avatar, company, mobile, status, online, offline, last_seen, updated_at
+      INSERT INTO public.profiles (id, name, display_name, email, avatar, avatar_url, company, mobile, status, online, offline, last_seen, updated_at)
+      SELECT new.id, COALESCE(name, user_name), COALESCE(display_name, name, user_name), email, avatar, avatar_url, company, mobile, status, online, offline, last_seen, updated_at
       FROM public.profiles
       WHERE id = old_user_id;
 
-      -- B. Update foreign key references in other tables to point to the new UUID
-      
-      -- Update conversation members
+      -- Update foreign key references in other tables to point to the new UUID
       UPDATE public.conversation_members SET user_id = new.id WHERE user_id = old_user_id;
-      
-      -- Update chat messages
       UPDATE public.chat_messages SET owner_user_id = new.id WHERE owner_user_id = old_user_id;
       UPDATE public.chat_messages SET sender_user_id = new.id WHERE sender_user_id = old_user_id;
       UPDATE public.chat_messages SET deleted_by = new.id WHERE deleted_by = old_user_id;
       UPDATE public.chat_messages SET replyto_user_id = new.id WHERE replyto_user_id = old_user_id;
       UPDATE public.chat_messages SET forwardto_user_id = new.id WHERE forwardto_user_id = old_user_id;
-      
-      -- Update contacts
       UPDATE public.contacts SET contact_user_id = new.id WHERE contact_user_id = old_user_id;
       UPDATE public.contacts SET owner_id = new.id WHERE owner_id = old_user_id;
 
-      -- C. Delete the old profile record safely
+      -- Delete the old profile record safely
       DELETE FROM public.profiles WHERE id = old_user_id;
     END IF;
   ELSE
-    -- If no profile exists, create a new one normally
-    INSERT INTO public.profiles (id, name, email, avatar, mobile)
+    -- If no profile exists, create a new one safely
+    INSERT INTO public.profiles (id, name, display_name, email, avatar, avatar_url, mobile)
     VALUES (
       new.id,
-      COALESCE(
-        new.raw_user_meta_data->>'display_name',
-        new.raw_user_meta_data->>'full_name',
-        new.raw_user_meta_data->>'name',
-        CASE WHEN new.email IS NOT NULL AND new.email <> '' THEN split_part(new.email, '@', 1) ELSE NULL END,
-        new.phone,
-        'User'
-      ),
+      user_name,
+      user_name,
       COALESCE(new.email, new.raw_user_meta_data->>'email'),
-      new.raw_user_meta_data->>'avatar_url',
+      user_avatar,
+      user_avatar,
       COALESCE(new.phone, new.raw_user_meta_data->>'mobile', new.raw_user_meta_data->>'phone')
-    );
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      name = COALESCE(EXCLUDED.name, public.profiles.name),
+      display_name = COALESCE(EXCLUDED.display_name, public.profiles.display_name),
+      email = COALESCE(EXCLUDED.email, public.profiles.email),
+      avatar = COALESCE(EXCLUDED.avatar, public.profiles.avatar),
+      avatar_url = COALESCE(EXCLUDED.avatar_url, public.profiles.avatar_url);
   END IF;
 
   RETURN new;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- Fallback: never let profile sync block account creation
+    BEGIN
+      INSERT INTO public.profiles (id, name, email)
+      VALUES (new.id, COALESCE(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1), 'User'), new.email)
+      ON CONFLICT (id) DO NOTHING;
+    EXCEPTION
+      WHEN OTHERS THEN
+        NULL;
+    END;
+    RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
