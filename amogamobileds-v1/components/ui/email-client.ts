@@ -23,7 +23,18 @@ export function getApiBaseUrl(): string {
   if (Platform.OS === 'web') {
     return '';
   }
-  // For physical Android/iOS or simulator environments
+
+  const envApiUrl = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (envApiUrl) {
+    return envApiUrl.replace(/\/$/, '');
+  }
+
+  // Standalone APK / mobile build default to production serverless backend
+  if (!__DEV__) {
+    return 'https://amoganativenew.vercel.app';
+  }
+
+  // For physical Android/iOS or simulator environments in local development
   const hostUri =
     Constants.expoConfig?.hostUri ||
     (Constants as any).manifest?.debuggerHost ||
@@ -35,7 +46,7 @@ export function getApiBaseUrl(): string {
     return `http://${host}:8081`;
   }
 
-  return 'http://localhost:8081';
+  return 'https://amoganativenew.vercel.app';
 }
 
 export async function getActiveEmailConfig() {
