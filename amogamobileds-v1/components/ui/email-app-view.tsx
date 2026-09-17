@@ -118,15 +118,15 @@ export function EmailAppView({
   const [activeTab, setActiveTab] = useState<EmailTabType>(initialTab);
   const [emails, setEmails] = useState<EmailMessageItem[]>(defaultEmailsData as EmailMessageItem[]);
   const [selectedId, setSelectedId] = useState<string>(
-    (defaultEmailsData as EmailMessageItem[])[0]?.id || 'm1'
+    (defaultEmailsData as EmailMessageItem[])[0]?.id || ''
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [isComposing, setIsComposing] = useState(false);
-  const [starredMap, setStarredMap] = useState<Record<string, boolean>>({ m1: true });
+  const [starredMap, setStarredMap] = useState<Record<string, boolean>>({});
 
   // Compose form state
   const [composeTo, setComposeTo] = useState('');
-  const [composeFrom, setComposeFrom] = useState('ask@morrai.com');
+  const [composeFrom, setComposeFrom] = useState('');
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
   const [composeAttachments, setComposeAttachments] = useState<EmailAttachment[]>([]);
@@ -172,7 +172,7 @@ export function EmailAppView({
     try {
       if (tabToLoad === 'Inbox') {
         const liveList = await fetchLiveInbox();
-        if (liveList && liveList.length > 0) {
+        if (Array.isArray(liveList)) {
           const mapped: EmailMessageItem[] = liveList.map((item: any, idx: number) => {
             const initials = (item.fromName || item.from || 'EM')
               .split(' ')
@@ -186,7 +186,7 @@ export function EmailAppView({
               id: `live-inbox-${item.id || idx}`,
               tab: 'inbox',
               name: item.fromName || (item.from ? item.from.split('@')[0] : 'Sender'),
-              email: item.from || 'ask@morrai.com',
+              email: item.from || '',
               avatarInitials: initials || 'EM',
               avatarBg: '#e0f2fe',
               avatarColor: '#0284c7',
@@ -195,8 +195,8 @@ export function EmailAppView({
               relativeTime: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               read: item.isRead ?? true,
               unreadDot: !item.isRead,
-              badges: ['Inbox', 'Hostinger'],
-              intro: item.text || (item.html ? item.html.replace(/<[^>]*>?/gm, '') : 'No text preview'),
+              badges: ['Inbox'],
+              intro: item.text || (item.html ? item.html.replace(/<[^>]*>?/gm, '') : ''),
               attachments: item.attachments,
             };
           });
@@ -207,15 +207,23 @@ export function EmailAppView({
         }
       } else if (tabToLoad === 'Sent') {
         const sentList = await fetchLiveSent();
-        if (sentList && sentList.length > 0) {
+        if (Array.isArray(sentList)) {
           const mapped: EmailMessageItem[] = sentList.map((item: any, idx: number) => {
             const d = item.date ? new Date(item.date) : new Date();
+            const fromName = item.fromName || (item.from ? item.from.split('@')[0] : 'Me');
+            const initials = fromName
+              .split(' ')
+              .filter(Boolean)
+              .map((n: string) => n[0])
+              .join('')
+              .substring(0, 2)
+              .toUpperCase();
             return {
               id: `live-sent-${item.id || idx}`,
               tab: 'sent',
-              name: item.fromName || 'ask@morrai.com',
-              email: item.from || 'ask@morrai.com',
-              avatarInitials: 'AM',
+              name: fromName,
+              email: item.from || '',
+              avatarInitials: initials || 'ME',
               avatarBg: '#ede9fe',
               avatarColor: '#7c3aed',
               subject: item.subject || '(No Subject)',
@@ -223,8 +231,8 @@ export function EmailAppView({
               relativeTime: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               read: true,
               unreadDot: false,
-              badges: ['Sent', 'Hostinger'],
-              intro: item.text || (item.html ? item.html.replace(/<[^>]*>?/gm, '') : 'No text preview'),
+              badges: ['Sent'],
+              intro: item.text || (item.html ? item.html.replace(/<[^>]*>?/gm, '') : ''),
               attachments: item.attachments,
             };
           });
@@ -454,12 +462,13 @@ export function EmailAppView({
         attachments: composeAttachments,
       });
 
+      const senderName = activeConfig?.email ? activeConfig.email.split('@')[0] : 'Me';
       const newEmail: EmailMessageItem = {
         id: `email-compose-${Date.now()}`,
         tab: 'sent',
-        name: activeConfig.email.split('@')[0] || 'Aman',
-        email: activeConfig.email,
-        avatarInitials: activeConfig.email.slice(0, 2).toUpperCase(),
+        name: senderName,
+        email: activeConfig?.email || '',
+        avatarInitials: (activeConfig?.email ? activeConfig.email.slice(0, 2) : 'ME').toUpperCase(),
         avatarBg: '#ede9fe',
         avatarColor: colors.primary || '#7c3aed',
         subject: composeSubject.trim(),
@@ -467,9 +476,8 @@ export function EmailAppView({
         relativeTime: 'Just now',
         read: true,
         unreadDot: false,
-        badges: ['Sent', 'Hostinger'],
+        badges: ['Sent'],
         intro: composeBody.trim() || 'No content provided.',
-        senderSignoff: `Regards,\n${activeConfig.email.split('@')[0]}`,
         attachments: composeAttachments.length > 0 ? composeAttachments : undefined,
       };
       setEmails((prev) => [newEmail, ...prev]);
@@ -1201,10 +1209,6 @@ export function EmailAppView({
                           {selectedEmail.headerTitle}
                         </Text>
                       )}
-
-                      <Text style={[styles.bodyNormalText, { color: textMain }]}>
-                        Hi team,
-                      </Text>
 
                       <Text style={[styles.bodyNormalText, { color: textMain }]}>
                         {selectedEmail.intro}
