@@ -1,5 +1,4 @@
 import { Platform } from 'react-native';
-import * as SQLite from 'expo-sqlite';
 
 let dbInstance: any = null;
 let initPromise: Promise<any> | null = null;
@@ -13,14 +12,27 @@ export async function getLocalDatabase() {
   }
 
   initPromise = (async () => {
+    // If running on Web, use browser local storage fallback without importing native ExpoSQLite
+    if (Platform.OS === 'web') {
+      const mockDb = createWebMockDb();
+      dbInstance = mockDb;
+      return mockDb;
+    }
+
     try {
-      const db = await SQLite.openDatabaseAsync('amoga_local.db');
-      await createTables(db);
-      dbInstance = db;
-      return db;
+      // Dynamic import so web bundler doesn't execute native module at evaluation time
+      const SQLite = require('expo-sqlite');
+      if (SQLite && typeof SQLite.openDatabaseAsync === 'function') {
+        const db = await SQLite.openDatabaseAsync('amoga_local.db');
+        await createTables(db);
+        dbInstance = db;
+        return db;
+      }
+      const mockDb = createWebMockDb();
+      dbInstance = mockDb;
+      return mockDb;
     } catch (err) {
-      console.warn('SQLite init warning:', err);
-      // Fallback in-memory/mock storage for platforms without native SQLite
+      console.warn('SQLite native module unavailable, falling back to web storage:', err);
       const mockDb = createWebMockDb();
       dbInstance = mockDb;
       return mockDb;
