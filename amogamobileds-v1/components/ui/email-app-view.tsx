@@ -806,8 +806,9 @@ export function EmailAppView({
               /* ── COMPOSE NEW MESSAGE VIEW ── */
               <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={styles.composeContainerStyle}
+                contentContainerStyle={[styles.composeContainerStyle, { flexGrow: 1 }]}
                 showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
               >
                 {/* Compose Header */}
                 <View style={[styles.composeHeaderRow, { borderBottomColor: borderColor }]}>
@@ -934,12 +935,12 @@ export function EmailAppView({
                 )}
 
                 {/* 5. Message with Rich Toolbar */}
-                <View style={styles.fieldSection}>
+                <View style={[styles.fieldSection, { flex: 1, minHeight: 220 }]}>
                   <Text style={[styles.fieldLabel, { color: textMain }]}>Message</Text>
                   <View
                     style={[
                       styles.emailContentBox,
-                      { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor },
+                      { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor, flex: 1 },
                     ]}
                   >
                     <View style={[styles.richToolbar, { borderBottomColor: borderColor, backgroundColor: isDark ? '#141e33' : '#f8fafc' }]}>
@@ -990,6 +991,7 @@ export function EmailAppView({
                         styles.composeTextArea,
                         {
                           color: textMain,
+                          flex: 1,
                         },
                       ]}
                     />
@@ -1121,7 +1123,7 @@ export function EmailAppView({
               /* ── EMAIL READING & REPLY VIEW ── */
               <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={styles.detailScrollContent}
+                contentContainerStyle={[styles.detailScrollContent, { flexGrow: 1 }]}
                 showsVerticalScrollIndicator={false}
               >
                 {/* Detail Top Header Bar */}
@@ -1213,7 +1215,7 @@ export function EmailAppView({
                 </View>
 
                 {/* Email Content Box with Rich Toolbar */}
-                <View style={styles.emailContentSection}>
+                <View style={[styles.emailContentSection, { flex: 1, minHeight: 200 }]}>
                   <Text style={[styles.sectionFieldLabel, { color: textMuted }]}>
                     Email Content
                   </Text>
@@ -1221,7 +1223,7 @@ export function EmailAppView({
                   <View
                     style={[
                       styles.emailContentBox,
-                      { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor },
+                      { backgroundColor: isDark ? '#141824' : '#ffffff', borderColor, flex: 1 },
                     ]}
                   >
                     {/* Rich Formatting Toolbar */}
@@ -1681,8 +1683,9 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   detailScrollContent: {
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
+    flexGrow: 1,
   },
   detailHeaderBar: {
     flexDirection: 'row',
@@ -1904,10 +1907,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 10,
+    paddingTop: 14,
+    marginTop: 'auto',
     borderTopWidth: 1,
     flexWrap: 'wrap',
     gap: 8,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
   },
   bottomLeftActionGroup: {
     flexDirection: 'row',
@@ -1947,8 +1952,9 @@ const styles = StyleSheet.create({
 
   // Compose View
   composeContainerStyle: {
-    padding: 20,
-    gap: 16,
+    padding: 16,
+    gap: 12,
+    flexGrow: 1,
   },
   composeHeaderRow: {
     flexDirection: 'row',
@@ -2012,8 +2018,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 16,
-    marginTop: 10,
+    marginTop: 'auto',
     borderTopWidth: 1,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
   },
   sendPurpleBtn: {
     flexDirection: 'row',
