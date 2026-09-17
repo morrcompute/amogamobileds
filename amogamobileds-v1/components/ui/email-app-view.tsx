@@ -48,6 +48,7 @@ import {
   ChevronDown,
   Bookmark,
   Save,
+  RefreshCw,
 } from 'lucide-react-native';
 import { useTheme } from '../../providers/theme-provider';
 import defaultEmailsData from './email-messages.json';
@@ -1326,7 +1327,8 @@ export function EmailAppView({
                       onPress={() => {
                         setIsComposing(true);
                         setComposeTo(selectedEmail.email);
-                        setComposeSubject(`Re: ${selectedEmail.subject}`);
+                        setComposeSubject(selectedEmail.subject.startsWith('Re:') ? selectedEmail.subject : `Re: ${selectedEmail.subject}`);
+                        setComposeBody(`\n\n--- Original Message ---\nFrom: ${selectedEmail.name} <${selectedEmail.email}>\nDate: ${selectedEmail.dateStr}\n\n${selectedEmail.intro}`);
                       }}
                       style={[styles.actionOutlineBtn, { borderColor }]}
                     >
@@ -1340,7 +1342,8 @@ export function EmailAppView({
                       onPress={() => {
                         setIsComposing(true);
                         setComposeTo(selectedEmail.email);
-                        setComposeSubject(`Re: ${selectedEmail.subject}`);
+                        setComposeSubject(selectedEmail.subject.startsWith('Re:') ? selectedEmail.subject : `Re: ${selectedEmail.subject}`);
+                        setComposeBody(`\n\n--- Original Message ---\nFrom: ${selectedEmail.name} <${selectedEmail.email}>\nDate: ${selectedEmail.dateStr}\n\n${selectedEmail.intro}`);
                       }}
                       style={[styles.actionOutlineBtn, { borderColor }]}
                     >
@@ -1353,7 +1356,9 @@ export function EmailAppView({
                     <TouchableOpacity
                       onPress={() => {
                         setIsComposing(true);
-                        setComposeSubject(`Fwd: ${selectedEmail.subject}`);
+                        setComposeTo('');
+                        setComposeSubject(selectedEmail.subject.startsWith('Fwd:') ? selectedEmail.subject : `Fwd: ${selectedEmail.subject}`);
+                        setComposeBody(`\n\n--- Forwarded Message ---\nFrom: ${selectedEmail.name} <${selectedEmail.email}>\nDate: ${selectedEmail.dateStr}\n\n${selectedEmail.intro}`);
                       }}
                       style={[styles.actionOutlineBtn, { borderColor }]}
                     >

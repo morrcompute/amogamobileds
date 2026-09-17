@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import defaultEmailSettings from './app_email_settings.json';
 
@@ -15,6 +17,25 @@ export interface EmailSendPayload {
     url?: string;
     content?: string;
   }>;
+}
+
+export function getApiBaseUrl(): string {
+  if (Platform.OS === 'web') {
+    return '';
+  }
+  // For physical Android/iOS or simulator environments
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest?.debuggerHost ||
+    (Constants as any).manifest2?.extra?.expoGo?.debuggerHost ||
+    '';
+
+  if (hostUri) {
+    const host = hostUri.split(':')[0];
+    return `http://${host}:8081`;
+  }
+
+  return 'http://localhost:8081';
 }
 
 export async function getActiveEmailConfig() {
@@ -58,10 +79,12 @@ export async function getActiveEmailConfig() {
 export async function fetchLiveInbox(page: number = 1, limit: number = 20) {
   try {
     const config = await getActiveEmailConfig();
-    const res = await fetch(`/api/mail/inbox?page=${page}&limit=${limit}`, {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/api/mail/inbox?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'x-mail-config': JSON.stringify(config),
       },
     });
 
@@ -79,10 +102,13 @@ export async function fetchLiveInbox(page: number = 1, limit: number = 20) {
 
 export async function fetchLiveSent(page: number = 1, limit: number = 20) {
   try {
-    const res = await fetch(`/api/mail/sent?page=${page}&limit=${limit}`, {
+    const config = await getActiveEmailConfig();
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/api/mail/sent?page=${page}&limit=${limit}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'x-mail-config': JSON.stringify(config),
       },
     });
 
@@ -101,7 +127,8 @@ export async function fetchLiveSent(page: number = 1, limit: number = 20) {
 export async function sendLiveEmail(payload: EmailSendPayload) {
   try {
     const config = await getActiveEmailConfig();
-    const res = await fetch('/api/mail/send', {
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/api/mail/send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,5 +162,23 @@ export async function sendLiveEmail(payload: EmailSendPayload) {
       success: false,
       message: err?.message || 'Network error while sending email.',
     };
+  }
+}
+
+export async function testEmailConnection() {
+  try {
+    const config = await getActiveEmailConfig();
+    const baseUrl = getApiBaseUrl();
+    const res = await fetch(`${baseUrl}/api/mail/test`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ customConfig: config }),
+    });
+    const data = await res.json().catch(() => null);
+    return data || { success: false, message: 'Invalid server response' };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Network error during connection test' };
   }
 }
