@@ -105,6 +105,7 @@ RETURNS trigger AS $$
 DECLARE
   user_name text;
   user_avatar text;
+  user_phone text;
   old_user_id uuid;
 BEGIN
   -- Extract username and avatar from all possible metadata fields
@@ -123,17 +124,24 @@ BEGIN
     new.raw_user_meta_data->>'avatar'
   );
 
+  user_phone := COALESCE(
+    new.phone,
+    new.raw_user_meta_data->>'mobile',
+    new.raw_user_meta_data->>'phone',
+    new.raw_user_meta_data->>'phone_number'
+  );
+
   -- Search for existing profile with the same email or mobile
   SELECT id INTO old_user_id FROM public.profiles 
   WHERE (email IS NOT NULL AND email <> '' AND email = new.email)
-     OR (mobile IS NOT NULL AND mobile <> '' AND mobile = COALESCE(new.phone, new.raw_user_meta_data->>'mobile', new.raw_user_meta_data->>'phone'))
+     OR (mobile IS NOT NULL AND mobile <> '' AND user_phone IS NOT NULL AND user_phone <> '' AND mobile = user_phone)
   LIMIT 1;
 
   IF old_user_id IS NOT NULL THEN
     -- Reconcile only if the ID has changed (new UUID assigned by auth)
     IF old_user_id <> new.id THEN
       INSERT INTO public.profiles (id, name, display_name, email, avatar, avatar_url, company, mobile, status, online, offline, last_seen, updated_at)
-      SELECT new.id, COALESCE(name, user_name), COALESCE(display_name, name, user_name), email, avatar, avatar_url, company, mobile, status, online, offline, last_seen, updated_at
+      SELECT new.id, COALESCE(name, user_name), COALESCE(display_name, name, user_name), email, avatar, avatar_url, company, COALESCE(mobile, user_phone), status, online, offline, last_seen, updated_at
       FROM public.profiles
       WHERE id = old_user_id;
 
@@ -149,6 +157,15 @@ BEGIN
 
       -- Delete the old profile record safely
       DELETE FROM public.profiles WHERE id = old_user_id;
+    ELSE
+      -- Profile exists with same ID, update mobile and metadata
+      UPDATE public.profiles SET
+        mobile = COALESCE(user_phone, public.profiles.mobile),
+        name = COALESCE(public.profiles.name, user_name),
+        display_name = COALESCE(public.profiles.display_name, user_name),
+        avatar_url = COALESCE(public.profiles.avatar_url, user_avatar),
+        updated_at = now()
+      WHERE id = new.id;
     END IF;
   ELSE
     -- If no profile exists, create a new one safely
@@ -160,14 +177,16 @@ BEGIN
       COALESCE(new.email, new.raw_user_meta_data->>'email'),
       user_avatar,
       user_avatar,
-      COALESCE(new.phone, new.raw_user_meta_data->>'mobile', new.raw_user_meta_data->>'phone')
+      user_phone
     )
     ON CONFLICT (id) DO UPDATE SET
       name = COALESCE(EXCLUDED.name, public.profiles.name),
       display_name = COALESCE(EXCLUDED.display_name, public.profiles.display_name),
       email = COALESCE(EXCLUDED.email, public.profiles.email),
       avatar = COALESCE(EXCLUDED.avatar, public.profiles.avatar),
-      avatar_url = COALESCE(EXCLUDED.avatar_url, public.profiles.avatar_url);
+      avatar_url = COALESCE(EXCLUDED.avatar_url, public.profiles.avatar_url),
+      mobile = COALESCE(EXCLUDED.mobile, public.profiles.mobile, user_phone),
+      updated_at = now();
   END IF;
 
   RETURN new;
@@ -175,9 +194,10 @@ EXCEPTION
   WHEN OTHERS THEN
     -- Fallback: never let profile sync block account creation
     BEGIN
-      INSERT INTO public.profiles (id, name, email)
-      VALUES (new.id, COALESCE(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1), 'User'), new.email)
-      ON CONFLICT (id) DO NOTHING;
+      INSERT INTO public.profiles (id, name, email, mobile)
+      VALUES (new.id, COALESCE(new.raw_user_meta_data->>'display_name', split_part(new.email, '@', 1), 'User'), new.email, user_phone)
+      ON CONFLICT (id) DO UPDATE SET
+        mobile = COALESCE(EXCLUDED.mobile, public.profiles.mobile);
     EXCEPTION
       WHEN OTHERS THEN
         NULL;
@@ -189,6 +209,11 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger to execute the function on user creation
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Trigger to execute the function on user update
+CREATE OR REPLACE TRIGGER on_auth_user_updated
+  AFTER UPDATE OF phone, raw_user_meta_data, email ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- Create conversations table
@@ -442,27 +467,80 @@ CREATE INDEX IF NOT EXISTS idx_conversation_members_user ON public.conversation_
 CREATE INDEX IF NOT EXISTS idx_chat_messages_owner_convo ON public.chat_messages(owner_user_id, conversation_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sender_msg_id ON public.chat_messages(sender_message_id);
 
+-- Helper function to check if a user is member of a conversation (Security Definer avoids recursive RLS)
+CREATE OR REPLACE FUNCTION public.is_conversation_member(convo_id uuid, usr_id uuid)
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.conversation_members
+    WHERE conversation_id = convo_id AND user_id = usr_id
+  );
+$$;
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversation_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
--- Conversations RLS Policies
-CREATE POLICY "Allow public read access to conversations" ON public.conversations FOR SELECT USING (true);
-CREATE POLICY "Allow public insert access to conversations" ON public.conversations FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update access to conversations" ON public.conversations FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete access to conversations" ON public.conversations FOR DELETE USING (true);
+-- Conversations RLS Policies (Strict User Isolation)
+DROP POLICY IF EXISTS "Allow public read access to conversations" ON public.conversations;
+DROP POLICY IF EXISTS "Users can view conversations they are member of" ON public.conversations;
+CREATE POLICY "Users can view conversations they are member of" ON public.conversations
+    FOR SELECT TO authenticated
+    USING (public.is_conversation_member(id, auth.uid()) OR auth.uid() = created_by);
 
--- Conversation Members RLS Policies
-CREATE POLICY "Allow public read access to conversation_members" ON public.conversation_members FOR SELECT USING (true);
-CREATE POLICY "Allow public insert access to conversation_members" ON public.conversation_members FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update access to conversation_members" ON public.conversation_members FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete access to conversation_members" ON public.conversation_members FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Allow public insert access to conversations" ON public.conversations;
+DROP POLICY IF EXISTS "Authenticated users can create conversations" ON public.conversations;
+CREATE POLICY "Authenticated users can create conversations" ON public.conversations
+    FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = created_by);
 
--- Chat Messages RLS Policies
+DROP POLICY IF EXISTS "Allow public update access to conversations" ON public.conversations;
+DROP POLICY IF EXISTS "Members can update conversation metadata" ON public.conversations;
+CREATE POLICY "Members can update conversation metadata" ON public.conversations
+    FOR UPDATE TO authenticated
+    USING (public.is_conversation_member(id, auth.uid()));
+
+DROP POLICY IF EXISTS "Allow public delete access to conversations" ON public.conversations;
+DROP POLICY IF EXISTS "Creators can delete conversations" ON public.conversations;
+CREATE POLICY "Creators can delete conversations" ON public.conversations
+    FOR DELETE TO authenticated
+    USING (auth.uid() = created_by);
+
+-- Conversation Members RLS Policies (Strict User Isolation)
+DROP POLICY IF EXISTS "Allow public read access to conversation_members" ON public.conversation_members;
+DROP POLICY IF EXISTS "Users can view members of their conversations" ON public.conversation_members;
+CREATE POLICY "Users can view members of their conversations" ON public.conversation_members
+    FOR SELECT TO authenticated
+    USING (user_id = auth.uid() OR public.is_conversation_member(conversation_id, auth.uid()));
+
+DROP POLICY IF EXISTS "Allow public insert access to conversation_members" ON public.conversation_members;
+DROP POLICY IF EXISTS "Users can join or add members to conversations" ON public.conversation_members;
+CREATE POLICY "Users can join or add members to conversations" ON public.conversation_members
+    FOR INSERT TO authenticated
+    WITH CHECK (public.is_conversation_member(conversation_id, auth.uid()) OR user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.conversations WHERE id = conversation_id AND created_by = auth.uid()));
+
+DROP POLICY IF EXISTS "Allow public update access to conversation_members" ON public.conversation_members;
+DROP POLICY IF EXISTS "Users can update their own membership" ON public.conversation_members;
+CREATE POLICY "Users can update their own membership" ON public.conversation_members
+    FOR UPDATE TO authenticated
+    USING (user_id = auth.uid());
+
+DROP POLICY IF EXISTS "Allow public delete access to conversation_members" ON public.conversation_members;
+DROP POLICY IF EXISTS "Users can leave or creators can remove members" ON public.conversation_members;
+CREATE POLICY "Users can leave or creators can remove members" ON public.conversation_members
+    FOR DELETE TO authenticated
+    USING (user_id = auth.uid() OR EXISTS (SELECT 1 FROM public.conversations WHERE id = conversation_id AND created_by = auth.uid()));
+
+-- Chat Messages RLS Policies (Strict User Copy Isolation)
+DROP POLICY IF EXISTS "Users can view their own copies of messages" ON public.chat_messages;
 CREATE POLICY "Users can view their own copies of messages" ON public.chat_messages
     FOR SELECT USING (auth.uid() = owner_user_id);
 
+DROP POLICY IF EXISTS "Users can insert message copies for conversation members" ON public.chat_messages;
 CREATE POLICY "Users can insert message copies for conversation members" ON public.chat_messages
     FOR INSERT WITH CHECK (
         auth.uid() = sender_user_id AND
@@ -470,12 +548,15 @@ CREATE POLICY "Users can insert message copies for conversation members" ON publ
         public.is_conversation_member(conversation_id, owner_user_id)
     );
 
+DROP POLICY IF EXISTS "Users can update their own copies of messages" ON public.chat_messages;
 CREATE POLICY "Users can update their own copies of messages" ON public.chat_messages
     FOR UPDATE USING (auth.uid() = owner_user_id) WITH CHECK (auth.uid() = owner_user_id);
 
+DROP POLICY IF EXISTS "Senders can update message copies for deletion" ON public.chat_messages;
 CREATE POLICY "Senders can update message copies for deletion" ON public.chat_messages
     FOR UPDATE USING (auth.uid() = sender_user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own copies of messages" ON public.chat_messages;
 CREATE POLICY "Users can delete their own copies of messages" ON public.chat_messages
     FOR DELETE USING (auth.uid() = owner_user_id);
 

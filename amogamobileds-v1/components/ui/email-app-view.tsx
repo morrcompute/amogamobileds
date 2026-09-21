@@ -48,7 +48,6 @@ import {
   ChevronDown,
   Bookmark,
   Save,
-  RefreshCw,
 } from 'lucide-react-native';
 import { Skeleton } from './skeleton';
 import { useTheme } from '../../providers/theme-provider';
@@ -166,7 +165,7 @@ export function EmailAppView({
   const [showBcc, setShowBcc] = useState(false);
   const [composeCc, setComposeCc] = useState('');
   const [composeBcc, setComposeBcc] = useState('');
-  const [isLoadingLive, setIsLoadingLive] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSendingLive, setIsSendingLive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
@@ -205,13 +204,12 @@ export function EmailAppView({
   const badgeText = isDark ? '#94a3b8' : '#475569';
   const inputBg = isDark ? '#1e293b' : '#f8fafc';
 
-  // Live Email Fetch from IMAP / Hostinger
-  const loadLiveEmails = useCallback(async (tabToLoad: EmailTabType = activeTab) => {
-    setIsLoadingLive(true);
+  // Live Email Fetch from IMAP / Hostinger (initial load with skeleton, silent background sync)
+  const loadLiveEmails = useCallback(async (tabToLoad: EmailTabType = activeTab, isInitial = false) => {
     try {
       if (tabToLoad === 'Inbox') {
         const liveList = await fetchLiveInbox();
-        if (Array.isArray(liveList)) {
+        if (Array.isArray(liveList) && liveList.length > 0) {
           const mapped: EmailMessageItem[] = liveList.map((item: any, idx: number) => {
             const initials = (item.fromName || item.from || 'EM')
               .split(' ')
@@ -240,19 +238,26 @@ export function EmailAppView({
             };
           });
           setEmails((prev) => {
-            const nonInbox = prev.filter((e) => e.tab.toLowerCase() !== 'inbox');
-            return [...mapped, ...nonInbox];
-          });
-          if (mapped.length > 0) {
-            setSelectedId((curr) => {
-              const exists = mapped.some((m) => m.id === curr);
-              return exists ? curr : mapped[0].id;
+            // Preserve user's local read status if email was already marked read
+            const readMap = new Map(prev.map((e) => [e.id, e.read]));
+            const mappedPreserved = mapped.map((m) => {
+              if (readMap.has(m.id)) {
+                const isRead = readMap.get(m.id)!;
+                return { ...m, read: isRead, unreadDot: !isRead };
+              }
+              return m;
             });
-          }
+            const nonInbox = prev.filter((e) => e.tab.toLowerCase() !== 'inbox');
+            return [...mappedPreserved, ...nonInbox];
+          });
+          setSelectedId((curr) => {
+            if (curr) return curr;
+            return mapped[0]?.id || curr;
+          });
         }
       } else if (tabToLoad === 'Sent') {
         const sentList = await fetchLiveSent();
-        if (Array.isArray(sentList)) {
+        if (Array.isArray(sentList) && sentList.length > 0) {
           const mapped: EmailMessageItem[] = sentList.map((item: any, idx: number) => {
             const d = item.date ? new Date(item.date) : new Date();
             const fromName = item.fromName || (item.from ? item.from.split('@')[0] : 'Me');
@@ -285,26 +290,29 @@ export function EmailAppView({
             const nonSent = prev.filter((e) => e.tab.toLowerCase() !== 'sent');
             return [...mapped, ...nonSent];
           });
-          if (mapped.length > 0) {
-            setSelectedId((curr) => {
-              const exists = mapped.some((m) => m.id === curr);
-              return exists ? curr : mapped[0].id;
-            });
-          }
+          setSelectedId((curr) => {
+            if (curr) return curr;
+            return mapped[0]?.id || curr;
+          });
         }
       }
     } catch (err) {
-      console.warn('Error loading live emails:', err);
+      console.warn('Silent live email sync notice:', err);
     } finally {
-      setIsLoadingLive(false);
+      if (isInitial) {
+        setIsInitialLoading(false);
+      }
     }
   }, [activeTab]);
 
+  // Initial load shows skeleton effect for the first time user opens mail menu; then silent background sync
   useEffect(() => {
-    loadLiveEmails(activeTab);
+    setIsInitialLoading(true);
+    loadLiveEmails(activeTab, true);
+
     const syncInterval = setInterval(() => {
-      loadLiveEmails(activeTab);
-    }, 8000);
+      loadLiveEmails(activeTab, false);
+    }, 5000);
     return () => clearInterval(syncInterval);
   }, [activeTab, loadLiveEmails]);
 
@@ -657,20 +665,6 @@ export function EmailAppView({
               </View>
 
               <TouchableOpacity
-                onPress={() => loadLiveEmails(activeTab)}
-                style={[
-                  styles.refreshIconBtn,
-                  {
-                    borderColor,
-                    backgroundColor: inputBg,
-                  },
-                ]}
-                accessibilityLabel="Sync Emails"
-              >
-                <RefreshCw size={13} color={isLoadingLive ? colors.primary : textMuted} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
                 onPress={() => {
                   setIsComposing(true);
                   if (!isDesktop) {
@@ -690,9 +684,9 @@ export function EmailAppView({
               style={styles.emailListScroll}
               contentContainerStyle={{ padding: 10, gap: 8, width: '100%' }}
             >
-              {isLoadingLive ? (
+              {isInitialLoading && emails.length === 0 ? (
                 <View style={{ gap: 8, width: '100%' }}>
-                  {Array.from({ length: 5 }).map((_, idx) => (
+                  {Array.from({ length: 6 }).map((_, idx) => (
                     <EmailCardSkeleton key={`skeleton-${idx}`} isDark={isDark} borderColor={borderColor} />
                   ))}
                 </View>
