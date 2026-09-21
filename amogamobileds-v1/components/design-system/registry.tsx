@@ -115,6 +115,7 @@ import {
   VerifyOtpPreview,
   ForgotPasswordPreview,
   SignupPagePreview,
+  SignInPagePreview,
 } from './previews/AuthPreviews';
 import { PreferencesPreview } from './previews/PreferencesPreview';
 import { MapPreviews } from './previews/MapPreviews';
@@ -3995,6 +3996,29 @@ export function SignUpScreen() {
       <SignupPageView
         onSuccess={(user) => console.log('User signed up and verified:', user)}
         onSignInPress={() => console.log('Navigate to Sign In')}
+      />
+    </View>
+  );
+}`,
+  },
+  {
+    id: 'page-signin',
+    name: 'Sign In Page',
+    file: 'signin-page-view.tsx',
+    category: 'Pages',
+    tag: 'PAGE',
+    description: 'Full-featured passwordless sign-in page featuring dual Email OTP and Mobile OTP authentication flows with 6-digit InputOTP verification, automatic unregistered user detection with registration prompts, and Supabase Auth integration.',
+    Preview: SignInPagePreview,
+    codeSnippet: `import React from 'react';
+import { View } from 'react-native';
+import { SigninPageView } from 'amogamobileds-v1';
+
+export function SignInScreen() {
+  return (
+    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+      <SigninPageView
+        onSuccess={(user) => console.log('User signed in:', user)}
+        onSignUpPress={() => console.log('Navigate to Sign Up')}
       />
     </View>
   );

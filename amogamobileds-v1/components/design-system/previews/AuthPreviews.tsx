@@ -1358,3 +1358,713 @@ export function SignupPagePreview() {
     </View>
   );
 }
+
+// ---------------------------------------------------------------------------
+// 6. Full Sign In Page Preview (Pages Category)
+// ---------------------------------------------------------------------------
+export function SignInPagePreview() {
+  const isDark = useColorScheme() === 'dark';
+  const { currentTheme } = useColorTheme();
+  const accent = isDark
+    ? currentTheme?.name && currentTheme.name !== 'zinc' && currentTheme.preview
+      ? currentTheme.preview
+      : '#818cf8'
+    : currentTheme?.name && currentTheme.name !== 'zinc'
+    ? currentTheme.preview
+    : '#18181b';
+
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  // Flow states
+  const [step, setStep] = useState<'form' | 'otp' | 'success'>('form');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | undefined>();
+  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [notRegistered, setNotRegistered] = useState(false);
+  const [verifiedIdentifier, setVerifiedIdentifier] = useState('');
+  const toast = useToast();
+
+  const border = isDark ? '#232734' : '#e2e8f0';
+  const text = isDark ? '#f8fafc' : '#0f172a';
+  const muted = isDark ? '#94a3b8' : '#64748b';
+  const cardBg = isDark ? '#141721' : '#f8fafc';
+  const successColor = '#10b981';
+
+  // Resend countdown timer
+  React.useEffect(() => {
+    let timer: any;
+    if (countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [countdown]);
+
+  const formatPhoneNumber = (val: string) => {
+    let cleaned = val.trim();
+    if (cleaned && !cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+    return cleaned;
+  };
+
+  const currentTarget = authMethod === 'email' ? email.trim() : formatPhoneNumber(phone);
+
+  const validateTarget = () => {
+    setOtpError(undefined);
+    setNotRegistered(false);
+
+    if (authMethod === 'email') {
+      const trimmedEmail = email.trim();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+        toast.error('Valid email required', 'Please enter a valid work email address.');
+        return false;
+      }
+    } else {
+      const formatted = formatPhoneNumber(phone);
+      if (formatted.length < 8) {
+        toast.error(
+          'Valid phone required',
+          'Please enter a valid phone number with country code (e.g. +1234567890).'
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleSendOtp = async () => {
+    if (!validateTarget()) return;
+    setLoading(true);
+    setOtpError(undefined);
+    setNotRegistered(false);
+
+    try {
+      if (authMethod === 'email') {
+        const trimmedEmail = email.trim();
+        const { error } = await supabase.auth.signInWithOtp({
+          email: trimmedEmail,
+          options: {
+            shouldCreateUser: false,
+          },
+        });
+        if (error) throw error;
+        toast.success('Code sent!', `A 6-digit login code was sent to ${trimmedEmail}`);
+      } else {
+        const formattedPhone = formatPhoneNumber(phone);
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: formattedPhone,
+          options: {
+            shouldCreateUser: false,
+          },
+        });
+        if (error) throw error;
+        toast.success('SMS code sent!', `A 6-digit login code was sent to ${formattedPhone}`);
+      }
+      setStep('otp');
+      setOtpCode('');
+      setCountdown(60);
+    } catch (err: any) {
+      const msg = (err.message || '').toLowerCase();
+      if (
+        msg.includes('signup') ||
+        msg.includes('not allowed') ||
+        msg.includes('user not found') ||
+        msg.includes('no user') ||
+        msg.includes('invalid')
+      ) {
+        setNotRegistered(true);
+        toast.error(
+          'Account not found',
+          'No account found with this information. Please sign up first!'
+        );
+      } else {
+        // In preview environments, allow entering OTP for demonstration
+        setStep('otp');
+        setOtpCode('');
+        setCountdown(60);
+        toast.info('Preview Mode', 'Enter verification code (test code 123456).');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (codeToVerify?: string) => {
+    const code = (codeToVerify || otpCode).trim();
+    if (code.length < 6) {
+      setOtpError('Please enter all 6 digits.');
+      return;
+    }
+    setVerifying(true);
+    setOtpError(undefined);
+
+    try {
+      let verifyResult: any;
+      if (authMethod === 'email') {
+        verifyResult = await supabase.auth.verifyOtp({
+          email: email.trim(),
+          token: code,
+          type: 'email',
+        });
+      } else {
+        const formattedPhone = formatPhoneNumber(phone);
+        verifyResult = await supabase.auth.verifyOtp({
+          phone: formattedPhone,
+          token: code,
+          type: 'sms',
+        });
+      }
+
+      if (verifyResult?.error) {
+        if (code === '123456') {
+          setVerifiedIdentifier(currentTarget);
+          setStep('success');
+          toast.success('Welcome back!', 'Demo sign-in successful.');
+          return;
+        }
+        throw verifyResult.error;
+      }
+
+      setVerifiedIdentifier(currentTarget);
+      setStep('success');
+      toast.success('Welcome back!', 'Signed in successfully.');
+    } catch (err: any) {
+      if (code === '123456') {
+        setVerifiedIdentifier(currentTarget);
+        setStep('success');
+        toast.success('Welcome back!', 'Demo sign-in successful.');
+      } else {
+        const msg = err.message || 'Invalid or expired verification code.';
+        setOtpError(msg);
+        toast.error('Verification failed', msg);
+      }
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0 || resending) return;
+    setResending(true);
+    setOtpError(undefined);
+    try {
+      if (authMethod === 'email') {
+        await supabase.auth.signInWithOtp({
+          email: email.trim(),
+          options: { shouldCreateUser: false },
+        });
+      } else {
+        await supabase.auth.signInWithOtp({
+          phone: formatPhoneNumber(phone),
+          options: { shouldCreateUser: false },
+        });
+      }
+      setCountdown(60);
+      toast.success('Resent!', 'A new 6-digit code has been sent.');
+    } catch {
+      setCountdown(60);
+      toast.success('Resent!', 'New verification code sent (test: 123456).');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const isFormValid =
+    authMethod === 'email' ? email.trim().length > 3 : phone.trim().length >= 6;
+
+  // Step 3: Success preview screen
+  if (step === 'success') {
+    return (
+      <View
+        style={{
+          width: '100%',
+          maxWidth: 440,
+          alignSelf: 'center',
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: isDark ? '#0c0f17' : '#ffffff',
+          padding: 24,
+          gap: 16,
+          alignItems: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: `${successColor}20`,
+            borderWidth: 1.5,
+            borderColor: successColor,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <CheckCircle2 size={32} color={successColor} />
+        </View>
+
+        <View style={{ alignItems: 'center', gap: 4 }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: text }}>Welcome back!</Text>
+          <Text style={{ fontSize: 12.5, color: muted, textAlign: 'center' }}>
+            Successfully authenticated via {authMethod === 'email' ? 'Email OTP' : 'Mobile OTP'}
+          </Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: accent, marginTop: 2 }}>
+            {verifiedIdentifier}
+          </Text>
+        </View>
+
+        <Button
+          onPress={() => {
+            setStep('form');
+            setOtpCode('');
+            setNotRegistered(false);
+          }}
+          style={{ height: 40, borderRadius: 8, width: '100%', marginTop: 8 }}
+        >
+          Reset Preview
+        </Button>
+      </View>
+    );
+  }
+
+  // Step 2: 6-Digit OTP Verification Screen
+  if (step === 'otp') {
+    return (
+      <View
+        style={{
+          width: '100%',
+          maxWidth: 440,
+          alignSelf: 'center',
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: border,
+          backgroundColor: isDark ? '#0c0f17' : '#ffffff',
+          padding: 24,
+          gap: 20,
+        }}
+      >
+        {/* Header */}
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: `${accent}18`,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 1,
+              borderColor: `${accent}35`,
+            }}
+          >
+            <ShieldCheck size={22} color={accent} />
+          </View>
+          <Text style={{ fontSize: 19, fontWeight: '700', color: text }}>Verify Sign In</Text>
+          <Text style={{ fontSize: 12.5, color: muted, textAlign: 'center' }}>
+            Enter the 6-digit verification code
+          </Text>
+        </View>
+
+        {/* Target Info Bar */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            backgroundColor: cardBg,
+            borderRadius: 10,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderWidth: 1,
+            borderColor: border,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+            {authMethod === 'email' ? (
+              <Mail size={15} color={accent} />
+            ) : (
+              <Phone size={15} color={accent} />
+            )}
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: text }} numberOfLines={1}>
+              {currentTarget}
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              setStep('form');
+              setOtpError(undefined);
+            }}
+            activeOpacity={0.7}
+          >
+            <Edit3 size={14} color={muted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* 6 Digit InputOTP Component */}
+        <View style={{ gap: 8, alignItems: 'center' }}>
+          <InputOTP
+            length={6}
+            value={otpCode}
+            onChangeText={(val) => {
+              setOtpCode(val);
+              if (otpError) setOtpError(undefined);
+            }}
+            onComplete={(val) => {
+              setOtpCode(val);
+              handleVerifyOtp(val);
+            }}
+            error={otpError}
+            disabled={verifying}
+          />
+          {otpError && (
+            <Text style={{ fontSize: 11.5, color: '#ef4444', textAlign: 'center' }}>
+              {otpError}
+            </Text>
+          )}
+        </View>
+
+        {/* Resend OTP Bar */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+          {countdown > 0 ? (
+            <Text style={{ fontSize: 12, color: muted }}>
+              Resend code in <Text style={{ fontWeight: '600', color: text }}>{countdown}s</Text>
+            </Text>
+          ) : (
+            <TouchableOpacity
+              onPress={handleResendOtp}
+              disabled={resending}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
+              <RefreshCw size={13} color={accent} />
+              <Text style={{ fontSize: 12, color: accent, fontWeight: '600' }}>
+                {resending ? 'Sending new code...' : 'Resend code'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Action Button */}
+        <Button
+          disabled={otpCode.length < 6 || verifying}
+          loading={verifying}
+          onPress={() => handleVerifyOtp()}
+          style={{ height: 42, borderRadius: 8 }}
+        >
+          Verify & Sign In
+        </Button>
+
+        {/* Back Link */}
+        <TouchableOpacity
+          onPress={() => {
+            setStep('form');
+            setOtpError(undefined);
+          }}
+          style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+          activeOpacity={0.7}
+        >
+          <ArrowLeft size={13} color={accent} />
+          <Text style={{ fontSize: 12, color: accent, fontWeight: '600' }}>
+            Change {authMethod === 'email' ? 'Email' : 'Number'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Step 1: Form Screen
+  return (
+    <View
+      style={{
+        width: '100%',
+        maxWidth: 440,
+        alignSelf: 'center',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: border,
+        backgroundColor: isDark ? '#0c0f17' : '#ffffff',
+        padding: 24,
+        gap: 18,
+      }}
+    >
+      {/* Header */}
+      <View style={{ alignItems: 'center', gap: 6 }}>
+        <View
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            backgroundColor: `${accent}18`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderWidth: 1,
+            borderColor: `${accent}35`,
+          }}
+        >
+          <Lock size={20} color={accent} />
+        </View>
+        <Text style={{ fontSize: 20, fontWeight: '700', color: text }}>Welcome back</Text>
+        <Text style={{ fontSize: 12.5, color: muted, textAlign: 'center' }}>
+          Sign in with instant OTP verification. No password required.
+        </Text>
+      </View>
+
+      {/* Unregistered User Alert Banner */}
+      {notRegistered && (
+        <View
+          style={{
+            backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#fef2f2',
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(239, 68, 68, 0.35)' : '#fca5a5',
+            borderRadius: 10,
+            padding: 12,
+            gap: 6,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <AlertCircle size={15} color="#ef4444" />
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: '#ef4444' }}>
+              Account not found
+            </Text>
+          </View>
+          <Text style={{ fontSize: 11.5, color: text, lineHeight: 16 }}>
+            No Amoga account exists for this {authMethod === 'email' ? 'email' : 'phone number'}.
+            Please create your account first!
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              setNotRegistered(false);
+              toast.info('Sign Up Action', 'Redirects to /sign-up');
+            }}
+            style={{
+              backgroundColor: '#ef4444',
+              borderRadius: 6,
+              paddingVertical: 7,
+              alignItems: 'center',
+              marginTop: 2,
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#ffffff' }}>
+              Go to Sign Up
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Auth Method Toggle (Email OTP vs Mobile OTP) */}
+      <View
+        style={{
+          flexDirection: 'row',
+          backgroundColor: isDark ? '#141721' : '#f1f5f9',
+          borderRadius: 10,
+          padding: 3,
+          borderWidth: 1,
+          borderColor: border,
+          gap: 3,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            setAuthMethod('email');
+            setNotRegistered(false);
+          }}
+          activeOpacity={0.8}
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 8,
+            borderRadius: 7,
+            backgroundColor: authMethod === 'email' ? accent : 'transparent',
+            gap: 6,
+          }}
+        >
+          <Mail size={14} color={authMethod === 'email' ? '#ffffff' : muted} />
+          <Text
+            style={{
+              fontWeight: '600',
+              fontSize: 12.5,
+              color: authMethod === 'email' ? '#ffffff' : muted,
+            }}
+          >
+            Email OTP
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            setAuthMethod('phone');
+            setNotRegistered(false);
+          }}
+          activeOpacity={0.8}
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 8,
+            borderRadius: 7,
+            backgroundColor: authMethod === 'phone' ? accent : 'transparent',
+            gap: 6,
+          }}
+        >
+          <Phone size={14} color={authMethod === 'phone' ? '#ffffff' : muted} />
+          <Text
+            style={{
+              fontWeight: '600',
+              fontSize: 12.5,
+              color: authMethod === 'phone' ? '#ffffff' : muted,
+            }}
+          >
+            Mobile OTP
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Inputs */}
+      {authMethod === 'email' ? (
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: text }}>Work Email</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 40,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: border,
+              backgroundColor: isDark ? '#0c0f17' : '#f8fafc',
+              paddingHorizontal: 10,
+              gap: 8,
+            }}
+          >
+            <Mail size={15} color="#94a3b8" />
+            <TextInput
+              style={{ flex: 1, fontSize: 13, color: text, padding: 0 }}
+              value={email}
+              onChangeText={(val) => {
+                setEmail(val);
+                if (notRegistered) setNotRegistered(false);
+              }}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="you@company.com"
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+        </View>
+      ) : (
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: text }}>Mobile Number</Text>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              height: 40,
+              borderRadius: 8,
+              borderWidth: 1,
+              borderColor: border,
+              backgroundColor: isDark ? '#0c0f17' : '#f8fafc',
+              paddingHorizontal: 10,
+              gap: 8,
+            }}
+          >
+            <Phone size={15} color="#94a3b8" />
+            <TextInput
+              style={{ flex: 1, fontSize: 13, color: text, padding: 0 }}
+              value={phone}
+              onChangeText={(val) => {
+                setPhone(val);
+                if (notRegistered) setNotRegistered(false);
+              }}
+              keyboardType="phone-pad"
+              autoCapitalize="none"
+              placeholder="+1 234 567 8900"
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+          <Text style={{ fontSize: 10.5, color: muted }}>
+            Include country code prefix (e.g. +1, +44, +91)
+          </Text>
+        </View>
+      )}
+
+      {/* Action Button */}
+      <Button
+        loading={loading}
+        disabled={loading || !isFormValid}
+        onPress={handleSendOtp}
+        style={{ height: 42, borderRadius: 8, marginTop: 4 }}
+      >
+        {authMethod === 'email' ? 'Send Sign In Code' : 'Send Mobile Code'}
+      </Button>
+
+      {/* Demo helper badge row */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          paddingVertical: 2,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            setEmail('demo@example.com');
+            setNotRegistered(false);
+          }}
+          activeOpacity={0.7}
+        >
+          <Badge variant="outline" style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontSize: 11, color: muted }}>Fill demo email</Text>
+          </Badge>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setEmail('unknown@company.com');
+            setNotRegistered(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <Badge variant="outline" style={{ paddingHorizontal: 8, paddingVertical: 2 }}>
+            <Text style={{ fontSize: 11, color: '#ef4444' }}>Simulate unregistered</Text>
+          </Badge>
+        </TouchableOpacity>
+      </View>
+
+      {/* Footer */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 4,
+          marginTop: 2,
+        }}
+      >
+        <Text style={{ fontSize: 12, color: muted }}>Don't have an account?</Text>
+        <TouchableOpacity
+          onPress={() => toast.info('Sign Up Link', 'Redirects to /sign-up')}
+          activeOpacity={0.7}
+        >
+          <Text style={{ fontSize: 12, fontWeight: '600', color: accent }}>Sign up</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
