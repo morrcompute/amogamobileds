@@ -83,6 +83,4 @@ export { default as app_ai_settings_json } from './app_ai_settings.json';
 export { default as app_email_settings_json } from './app_email_settings.json';
 export { default as email_messages_json } from './email-messages.json';
 export * from './email-client';
-
-
-
+export * from './signup-page-view';

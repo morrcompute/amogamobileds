@@ -23,14 +23,15 @@ const getRedirectUri = () => {
   });
 };
 
+// Third-party OAuth providers temporarily disabled - only email/password authentication is active
 const PROVIDERS: {
   provider: Provider;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
-  { provider: 'google', label: 'Continue with Google', icon: 'logo-google' },
-  { provider: 'apple', label: 'Continue with Apple', icon: 'logo-apple' },
-  { provider: 'github', label: 'Continue with GitHub', icon: 'logo-github' },
+  // { provider: 'google', label: 'Continue with Google', icon: 'logo-google' },
+  // { provider: 'apple', label: 'Continue with Apple', icon: 'logo-apple' },
+  // { provider: 'github', label: 'Continue with GitHub', icon: 'logo-github' },
 ];
 
 /**
@@ -101,6 +102,10 @@ export function OAuthButtons({ disabled }: { disabled?: boolean }) {
       setPending(null);
     }
   };
+
+  if (PROVIDERS.length === 0) {
+    return null;
+  }
 
   return (
     <View style={{ gap: 8 }}>

@@ -114,6 +114,7 @@ import {
   SignUpPreview,
   VerifyOtpPreview,
   ForgotPasswordPreview,
+  SignupPagePreview,
 } from './previews/AuthPreviews';
 import { PreferencesPreview } from './previews/PreferencesPreview';
 import { MapPreviews } from './previews/MapPreviews';
@@ -3974,6 +3975,29 @@ export function AiChatScreen() {
 
 export function AppSettingsScreen() {
   return <AppSettingsPagePreview />;
+}`,
+  },
+  {
+    id: 'page-signup',
+    name: 'Sign Up Page',
+    file: 'signup-page-view.tsx',
+    category: 'Pages',
+    tag: 'PAGE',
+    description: 'Full-featured account registration page featuring dual Email OTP and Mobile OTP authentication flows with 6-digit InputOTP verification, Supabase Auth integration, automated profile synchronization, and resend countdown timers.',
+    Preview: SignupPagePreview,
+    codeSnippet: `import React from 'react';
+import { View } from 'react-native';
+import { SignupPageView } from 'amogamobileds-v1';
+
+export function SignUpScreen() {
+  return (
+    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+      <SignupPageView
+        onSuccess={(user) => console.log('User signed up and verified:', user)}
+        onSignInPress={() => console.log('Navigate to Sign In')}
+      />
+    </View>
+  );
 }`,
   },
 ];

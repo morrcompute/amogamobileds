@@ -106,6 +106,7 @@ export interface EmailAppViewProps {
 const TABS: EmailTabType[] = ['Inbox', 'Sent', 'Folder', 'Contact', 'Groups'];
 
 function EmailCardSkeleton({ isDark, borderColor }: { isDark: boolean; borderColor: string }) {
+  const skelBg = isDark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(203, 213, 225, 0.65)';
   return (
     <View
       style={[
@@ -118,16 +119,17 @@ function EmailCardSkeleton({ isDark, borderColor }: { isDark: boolean; borderCol
       ]}
     >
       <View style={styles.emailCardHeader}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Skeleton width={110} height={14} variant="rounded" style={{ borderRadius: 4 }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Skeleton width={26} height={26} variant="rounded" style={{ borderRadius: 13, backgroundColor: skelBg }} />
+          <Skeleton width={110} height={14} variant="rounded" style={{ borderRadius: 4, backgroundColor: skelBg }} />
         </View>
-        <Skeleton width={40} height={12} variant="rounded" style={{ borderRadius: 4 }} />
+        <Skeleton width={44} height={12} variant="rounded" style={{ borderRadius: 4, backgroundColor: skelBg }} />
       </View>
-      <View style={[styles.badgesRow, { marginVertical: 3 }]}>
-        <Skeleton width={46} height={18} variant="rounded" style={{ borderRadius: 4 }} />
+      <View style={[styles.badgesRow, { marginVertical: 4 }]}>
+        <Skeleton width={48} height={16} variant="rounded" style={{ borderRadius: 4, backgroundColor: skelBg }} />
       </View>
-      <Skeleton width="82%" height={14} variant="rounded" style={{ borderRadius: 4, marginVertical: 2 }} />
-      <Skeleton width="64%" height={12} variant="rounded" style={{ borderRadius: 4 }} />
+      <Skeleton width="85%" height={14} variant="rounded" style={{ borderRadius: 4, marginVertical: 3, backgroundColor: skelBg }} />
+      <Skeleton width="65%" height={12} variant="rounded" style={{ borderRadius: 4, backgroundColor: skelBg }} />
     </View>
   );
 }
@@ -147,10 +149,8 @@ export function EmailAppView({
   const isDesktop = width >= 768;
 
   const [activeTab, setActiveTab] = useState<EmailTabType>(initialTab);
-  const [emails, setEmails] = useState<EmailMessageItem[]>(defaultEmailsData as EmailMessageItem[]);
-  const [selectedId, setSelectedId] = useState<string>(
-    (defaultEmailsData as EmailMessageItem[])[0]?.id || ''
-  );
+  const [emails, setEmails] = useState<EmailMessageItem[]>([]);
+  const [selectedId, setSelectedId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isComposing, setIsComposing] = useState(false);
   const [starredMap, setStarredMap] = useState<Record<string, boolean>>({});
@@ -243,6 +243,12 @@ export function EmailAppView({
             const nonInbox = prev.filter((e) => e.tab.toLowerCase() !== 'inbox');
             return [...mapped, ...nonInbox];
           });
+          if (mapped.length > 0) {
+            setSelectedId((curr) => {
+              const exists = mapped.some((m) => m.id === curr);
+              return exists ? curr : mapped[0].id;
+            });
+          }
         }
       } else if (tabToLoad === 'Sent') {
         const sentList = await fetchLiveSent();
@@ -279,6 +285,12 @@ export function EmailAppView({
             const nonSent = prev.filter((e) => e.tab.toLowerCase() !== 'sent');
             return [...mapped, ...nonSent];
           });
+          if (mapped.length > 0) {
+            setSelectedId((curr) => {
+              const exists = mapped.some((m) => m.id === curr);
+              return exists ? curr : mapped[0].id;
+            });
+          }
         }
       }
     } catch (err) {
@@ -645,6 +657,20 @@ export function EmailAppView({
               </View>
 
               <TouchableOpacity
+                onPress={() => loadLiveEmails(activeTab)}
+                style={[
+                  styles.refreshIconBtn,
+                  {
+                    borderColor,
+                    backgroundColor: inputBg,
+                  },
+                ]}
+                accessibilityLabel="Sync Emails"
+              >
+                <RefreshCw size={13} color={isLoadingLive ? colors.primary : textMuted} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 onPress={() => {
                   setIsComposing(true);
                   if (!isDesktop) {
@@ -664,7 +690,7 @@ export function EmailAppView({
               style={styles.emailListScroll}
               contentContainerStyle={{ padding: 10, gap: 8, width: '100%' }}
             >
-              {isLoadingLive && filteredEmails.length === 0 ? (
+              {isLoadingLive ? (
                 <View style={{ gap: 8, width: '100%' }}>
                   {Array.from({ length: 5 }).map((_, idx) => (
                     <EmailCardSkeleton key={`skeleton-${idx}`} isDark={isDark} borderColor={borderColor} />
@@ -1578,6 +1604,14 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontFamily: 'Open Sans',
     padding: 0,
+  },
+  refreshIconBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   newEmailPillBtn: {
     flexDirection: 'row',

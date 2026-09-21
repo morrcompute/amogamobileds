@@ -360,7 +360,7 @@ export function ChatBubble({
   id,
   content,
   isOwn = false,
-  senderName = 'Mohammed Aman',
+  senderName = 'User',
   senderAvatar,
   time,
   status,

@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../lib/database.types';
+import { LocalChatService } from '../lib/local-db';
 
 interface AuthContextType {
   /** `null` once resolved and signed out; the session while signed in. */
@@ -38,6 +39,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', id)
       .maybeSingle();
 
+    const userPhone =
+      currentUser?.phone ||
+      currentUser?.user_metadata?.mobile ||
+      currentUser?.user_metadata?.phone ||
+      currentUser?.user_metadata?.phone_number ||
+      null;
+
+    // If profile row exists but mobile is missing while present on Auth user
+    if (data && userPhone && !data.mobile) {
+      await supabase
+        .from('profiles')
+        .update({ mobile: userPhone, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      data = { ...data, mobile: userPhone };
+    }
+
     // If profile row doesn't exist yet in public.profiles, automatically create/upsert it
     if (!data && currentUser) {
       const displayName =
@@ -45,12 +62,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         currentUser.user_metadata?.full_name ||
         currentUser.user_metadata?.display_name ||
         currentUser.email?.split('@')[0] ||
+        userPhone ||
         'User';
 
       const fallback = {
         id: currentUser.id,
         email: currentUser.email || '',
         name: displayName,
+        display_name: displayName,
+        mobile: userPhone,
         online: true,
         offline: false,
         updated_at: new Date().toISOString(),
@@ -192,9 +212,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    if (userId) {
+      await LocalChatService.clearUserCache(userId).catch(() => {});
+    }
     await supabase.auth.signOut();
     setProfile(null);
-  }, []);
+  }, [userId]);
 
   const refreshProfile = useCallback(async () => {
     if (userId) await loadProfile(userId);

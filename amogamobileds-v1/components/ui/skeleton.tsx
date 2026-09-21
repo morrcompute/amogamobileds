@@ -55,7 +55,7 @@ export const Skeleton = React.memo(function Skeleton({
         {
           width: width as any,
           height,
-          backgroundColor: mutedColor,
+          backgroundColor: mutedColor || 'rgba(148, 163, 184, 0.28)',
           borderRadius: variant === 'default' ? CORNERS : BORDER_RADIUS,
         },
         animatedStyle,

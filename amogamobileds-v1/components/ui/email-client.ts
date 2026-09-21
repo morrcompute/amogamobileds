@@ -20,13 +20,28 @@ export interface EmailSendPayload {
 }
 
 export function getApiBaseUrl(): string {
-  if (Platform.OS === 'web') {
-    return '';
-  }
-
   const envApiUrl = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
   if (envApiUrl) {
     return envApiUrl.replace(/\/$/, '');
+  }
+
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined') {
+      const hostname = window.location?.hostname || '';
+      // In local development on web (localhost, 127.0.0.1, or local dev port)
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname.startsWith('192.168.') ||
+        hostname.startsWith('10.') ||
+        hostname.startsWith('172.') ||
+        window.location?.port === '8081' ||
+        window.location?.port === '8082'
+      ) {
+        return 'https://amoganativenew.vercel.app';
+      }
+    }
+    return '';
   }
 
   // Standalone APK / mobile build default to production serverless backend

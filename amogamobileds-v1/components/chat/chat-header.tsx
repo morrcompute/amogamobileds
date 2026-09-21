@@ -50,8 +50,8 @@ export interface ChatHeaderProps {
 }
 
 export function ChatHeader({
-  title = 'Mohammed Aman',
-  subtitle = 'Last seen today at 04:58 PM',
+  title = 'Chat',
+  subtitle = '',
   avatarUrl,
   status = 'online',
   isGroup = false,
