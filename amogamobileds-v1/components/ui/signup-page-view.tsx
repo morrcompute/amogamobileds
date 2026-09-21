@@ -32,16 +32,19 @@ const CODE_LENGTH = 6;
 const RESEND_COOLDOWN = 60;
 
 export interface SignupPageViewProps {
-  onSuccess?: (user: any) => void;
+  onSuccess?: (user: any, session?: any) => void;
   onSignInPress?: () => void;
   initialMethod?: 'email' | 'phone';
+  supabaseClient?: any;
 }
 
 export function SignupPageView({
   onSuccess,
   onSignInPress,
   initialMethod = 'email',
+  supabaseClient,
 }: SignupPageViewProps) {
+  const client = supabaseClient || supabase;
   const isDark = useColorScheme() === 'dark';
   const { currentTheme } = useColorTheme();
   const toast = useToast();
@@ -137,7 +140,7 @@ export function SignupPageView({
     const cleanName = displayName.trim();
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await client.auth.signInWithOtp({
         email: trimmedEmail,
         options: {
           shouldCreateUser: true,
@@ -153,7 +156,6 @@ export function SignupPageView({
 
       setStep('otp');
       setOtp(Array(CODE_LENGTH).fill(''));
-      setCountdown(RESEND_COOLDOWN);
       toast.success('Code sent!', `A 6-digit verification code was sent to ${trimmedEmail}`);
       setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err: any) {
@@ -173,7 +175,7 @@ export function SignupPageView({
     const cleanName = displayName.trim();
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await client.auth.signInWithOtp({
         phone: formattedPhone,
         options: {
           shouldCreateUser: true,
@@ -190,7 +192,6 @@ export function SignupPageView({
 
       setStep('otp');
       setOtp(Array(CODE_LENGTH).fill(''));
-      setCountdown(RESEND_COOLDOWN);
       toast.success('SMS code sent!', `A 6-digit verification code was sent to ${formattedPhone}`);
       setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err: any) {
@@ -263,14 +264,14 @@ export function SignupPageView({
     try {
       let verifyResult: any;
       if (authMethod === 'email') {
-        verifyResult = await supabase.auth.verifyOtp({
+        verifyResult = await client.auth.verifyOtp({
           email: email.trim(),
           token: fullCode,
           type: 'email',
         });
       } else {
         const formattedPhone = formatPhoneNumber(phone);
-        verifyResult = await supabase.auth.verifyOtp({
+        verifyResult = await client.auth.verifyOtp({
           phone: formattedPhone,
           token: fullCode,
           type: 'sms',
@@ -280,20 +281,22 @@ export function SignupPageView({
       if (verifyResult.error) throw verifyResult.error;
 
       const user = verifyResult.data?.user;
+      const session = verifyResult.data?.session;
+
       if (user) {
         const cleanName = displayName.trim();
         const formattedPhone = phone.trim() ? formatPhoneNumber(phone) : null;
 
-        await supabase.auth.updateUser({
+        await client.auth.updateUser({
           data: {
             display_name: cleanName,
             name: cleanName,
             full_name: cleanName,
             ...(formattedPhone ? { mobile: formattedPhone } : {}),
           },
-        });
+        }).catch(() => {});
 
-        await supabase.from('profiles').upsert(
+        await client.from('profiles').upsert(
           {
             id: user.id,
             email: user.email || (authMethod === 'email' ? email.trim() : null),
@@ -303,14 +306,15 @@ export function SignupPageView({
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'id' }
-        );
+        ).catch(() => {});
       }
 
-      setStep('success');
       toast.success('Account created!', 'Welcome to Amoga.');
 
       if (onSuccess) {
-        onSuccess(user);
+        onSuccess(user, session);
+      } else {
+        setStep('success');
       }
     } catch (err: any) {
       const msg = err.message || 'Invalid or expired verification code.';
@@ -323,12 +327,12 @@ export function SignupPageView({
 
   // Resend OTP
   const handleResendOtp = async () => {
-    if (countdown > 0 || resending) return;
+    if (resending) return;
     setResending(true);
     setBanner(null);
     try {
       if (authMethod === 'email') {
-        const { error } = await supabase.auth.signInWithOtp({
+        const { error } = await client.auth.signInWithOtp({
           email: email.trim(),
           options: {
             shouldCreateUser: true,
@@ -339,7 +343,7 @@ export function SignupPageView({
         toast.success('Resent!', `New verification code sent to ${email.trim()}`);
       } else {
         const formattedPhone = formatPhoneNumber(phone);
-        const { error } = await supabase.auth.signInWithOtp({
+        const { error } = await client.auth.signInWithOtp({
           phone: formattedPhone,
           options: {
             shouldCreateUser: true,
@@ -349,7 +353,6 @@ export function SignupPageView({
         if (error) throw error;
         toast.success('Resent!', `New SMS code sent to ${formattedPhone}`);
       }
-      setCountdown(RESEND_COOLDOWN);
     } catch (err: any) {
       setBanner({ type: 'error', message: err.message || 'Could not resend OTP code.' });
       toast.error('Resend failed', err.message || 'Could not resend OTP code.');
@@ -503,23 +506,17 @@ export function SignupPageView({
 
           {/* Resend OTP Bar */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-            {countdown > 0 ? (
-              <Text style={{ fontSize: 12.5, color: muted }}>
-                Resend code in <Text style={{ fontWeight: '600', color: text }}>{countdown}s</Text>
+            <TouchableOpacity
+              onPress={handleResendOtp}
+              disabled={resending}
+              activeOpacity={0.7}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+            >
+              <RefreshCw size={13} color={accent} />
+              <Text style={{ fontSize: 13, color: accent, fontWeight: '600' }}>
+                {resending ? 'Sending...' : 'Resend code'}
               </Text>
-            ) : (
-              <TouchableOpacity
-                onPress={handleResendOtp}
-                disabled={resending}
-                activeOpacity={0.7}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
-              >
-                <RefreshCw size={13} color={accent} />
-                <Text style={{ fontSize: 13, color: accent, fontWeight: '600' }}>
-                  {resending ? 'Sending...' : 'Resend code'}
-                </Text>
-              </TouchableOpacity>
-            )}
+            </TouchableOpacity>
           </View>
 
           {/* Verify Button */}
