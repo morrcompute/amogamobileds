@@ -1,11 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
+  Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { Image as ExpoImage } from 'expo-image';
 import {
@@ -21,22 +24,38 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Download,
+  Users,
+  UserPlus,
+  Trash2,
+  Shield,
+  Check,
 } from 'lucide-react-native';
 import { useTheme } from '../../providers/theme-provider';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import type { ChatMessage, Conversation } from '../../lib/database.types';
+import {
+  getConversationMembers,
+  addConversationMember,
+  removeConversationMember,
+  type ConversationMemberWithProfile,
+} from '../../lib/chat-service';
+import { supabase } from '../../lib/supabase';
 
 export interface ContactInfoViewProps {
   onClose: () => void;
-  conversation: (Conversation & { otherMember?: any; is_group?: boolean; title?: string; participant_count?: number }) | null;
+  conversation: (Conversation & { otherMember?: any; is_group?: boolean; title?: string; participant_count?: number; membersCount?: number }) | null;
   messages: ChatMessage[];
+  currentUserId?: string;
+  contacts?: Array<{ id: string; name: string; email?: string; mobile?: string; contactUserId?: string; initials?: string }>;
   onOpenMedia?: (url: string, name?: string) => void;
   onOpenDoc?: (url: string, name?: string) => void;
+  onAddMember?: (userId: string) => Promise<boolean> | void;
+  onRemoveMember?: (userId: string) => Promise<boolean> | void;
   style?: any;
 }
 
-type TabType = 'media' | 'docs' | 'audio' | 'links';
+type TabType = 'members' | 'media' | 'docs' | 'audio' | 'links';
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/gi;
 
@@ -44,27 +63,86 @@ export function ContactInfoView({
   onClose,
   conversation,
   messages,
+  currentUserId,
+  contacts = [],
   onOpenMedia,
   onOpenDoc,
+  onAddMember,
+  onRemoveMember,
   style,
 }: ContactInfoViewProps) {
   const { colors, resolvedMode } = useTheme();
   const isDark = resolvedMode === 'dark';
-  const [activeTab, setActiveTab] = useState<TabType>('media');
+
+  const isGroup = !!(conversation?.is_group || conversation?.type === 'group');
+  const [activeTab, setActiveTab] = useState<TabType>(isGroup ? 'members' : 'media');
   const [isMuted, setIsMuted] = useState(false);
 
-  const title =
-    conversation?.is_group
-      ? conversation.title || 'Group Chat'
-      : conversation?.otherMember?.name || conversation?.otherMember?.email?.split('@')[0] || 'Chat';
+  // Group Members State
+  const [members, setMembers] = useState<ConversationMemberWithProfile[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [addingMemberId, setAddingMemberId] = useState<string | null>(null);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
-  const email =
-    conversation?.otherMember?.email || '';
+  const loadMembers = useCallback(async () => {
+    if (!conversation?.id || !isGroup) return;
+    setLoadingMembers(true);
+    try {
+      const data = await getConversationMembers(conversation.id);
+      setMembers(data);
+    } catch (err) {
+      console.warn('Failed to load conversation members:', err);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [conversation?.id, isGroup]);
 
-  const subtitle =
-    conversation?.is_group
-      ? `${conversation.participant_count || 2} members`
-      : email || (conversation?.otherMember?.online ? 'Online' : 'Offline');
+  useEffect(() => {
+    loadMembers();
+  }, [loadMembers]);
+
+  // Realtime listener for member changes in this group
+  useEffect(() => {
+    if (!conversation?.id || !isGroup) return;
+
+    const channel = supabase
+      .channel(`group_members_${conversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_members',
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        () => {
+          loadMembers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation?.id, isGroup, loadMembers]);
+
+  const isAdmin = useMemo(() => {
+    if (!isGroup) return false;
+    if (conversation?.created_by && currentUserId && conversation.created_by === currentUserId) return true;
+    return members.some((m) => m.user_id === currentUserId && m.role === 'admin');
+  }, [isGroup, conversation?.created_by, currentUserId, members]);
+
+  const title = isGroup
+    ? conversation?.name || conversation?.title || 'Group Chat'
+    : conversation?.otherMember?.name || conversation?.otherMember?.email?.split('@')[0] || 'Chat';
+
+  const email = conversation?.otherMember?.email || '';
+
+  const subtitle = isGroup
+    ? `${members.length || conversation?.membersCount || conversation?.participant_count || 2} members`
+    : email || (conversation?.otherMember?.online ? 'Online' : 'Offline');
 
   const initials =
     title
@@ -72,7 +150,7 @@ export function ContactInfoView({
       .map((n: string) => n[0])
       .join('')
       .slice(0, 2)
-      .toUpperCase() || 'A';
+      .toUpperCase() || 'GC';
 
   // Extract shared items categorized
   const { mediaItems, docItems, audioItems, linkItems } = useMemo(() => {
@@ -185,6 +263,57 @@ export function ContactInfoView({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleAddMemberClick = async (targetUserId: string) => {
+    if (!conversation?.id) return;
+    setAddingMemberId(targetUserId);
+    try {
+      if (onAddMember) {
+        await onAddMember(targetUserId);
+      } else {
+        await addConversationMember(conversation.id, targetUserId);
+      }
+      await loadMembers();
+      setIsAddMemberModalOpen(false);
+    } catch (e) {
+      console.error('Failed to add member:', e);
+    } finally {
+      setAddingMemberId(null);
+    }
+  };
+
+  const handleRemoveMemberClick = async (targetUserId: string) => {
+    if (!conversation?.id) return;
+    setRemovingMemberId(targetUserId);
+    try {
+      if (onRemoveMember) {
+        await onRemoveMember(targetUserId);
+      } else {
+        await removeConversationMember(conversation.id, targetUserId);
+      }
+      await loadMembers();
+    } catch (e) {
+      console.error('Failed to remove member:', e);
+    } finally {
+      setRemovingMemberId(null);
+    }
+  };
+
+  // Contacts available to be added to this group (excluding already added members)
+  const existingMemberIds = useMemo(() => new Set(members.map((m) => m.user_id)), [members]);
+  const availableContacts = useMemo(() => {
+    return contacts.filter((c) => {
+      const uid = c.contactUserId || c.id;
+      if (existingMemberIds.has(uid)) return false;
+      if (!memberSearchQuery.trim()) return true;
+      const q = memberSearchQuery.toLowerCase();
+      return (
+        c.name.toLowerCase().includes(q) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.mobile && c.mobile.includes(q))
+      );
+    });
+  }, [contacts, existingMemberIds, memberSearchQuery]);
+
   return (
     <View
       style={[
@@ -208,7 +337,7 @@ export function ContactInfoView({
         ]}
       >
         <Text style={[styles.topBarTitle, { color: colors.foreground }]}>
-          {conversation?.is_group ? 'Group Info' : 'Contact Info'}
+          {isGroup ? 'Group Info' : 'Contact Info'}
         </Text>
 
         <TouchableOpacity
@@ -263,7 +392,7 @@ export function ContactInfoView({
             {subtitle}
           </Text>
 
-          {/* Quick Action Buttons Row matching Screenshot */}
+          {/* Quick Action Buttons Row */}
           <View style={styles.actionRow}>
             <TouchableOpacity
               style={[
@@ -340,7 +469,7 @@ export function ContactInfoView({
           </View>
         </View>
 
-        {/* Media / Docs / Audio / Links Tabs Bar */}
+        {/* Tabs Bar */}
         <View
           style={[
             styles.tabsContainer,
@@ -351,6 +480,36 @@ export function ContactInfoView({
           ]}
         >
           <View style={styles.tabsHeader}>
+            {/* TAB: MEMBERS (Only for Groups, placed BEFORE Media) */}
+            {isGroup && (
+              <TouchableOpacity
+                style={[
+                  styles.tabItem,
+                  activeTab === 'members' && [
+                    styles.tabItemActive,
+                    { backgroundColor: isDark ? '#27272a' : '#ffffff' },
+                  ],
+                ]}
+                onPress={() => setActiveTab('members')}
+              >
+                <Users
+                  size={15}
+                  color={activeTab === 'members' ? colors.primary : colors.mutedForeground}
+                />
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: activeTab === 'members' ? colors.primary : colors.mutedForeground,
+                      fontWeight: activeTab === 'members' ? '700' : '500',
+                    },
+                  ]}
+                >
+                  Members ({members.length})
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity
               style={[
                 styles.tabItem,
@@ -463,6 +622,134 @@ export function ContactInfoView({
 
         {/* Tab Content Panes */}
         <View style={styles.tabContentArea}>
+          {/* TAB: MEMBERS */}
+          {activeTab === 'members' && isGroup && (
+            <View style={{ gap: 12 }}>
+              {/* Member Controls Header */}
+              <View style={styles.membersHeaderRow}>
+                <Text style={[styles.membersCountLabel, { color: colors.foreground }]}>
+                  {members.length} {members.length === 1 ? 'Member' : 'Members'}
+                </Text>
+
+                {isAdmin && (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setIsAddMemberModalOpen(true)}
+                    style={[
+                      styles.addMemberBtn,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    <UserPlus size={14} color="#ffffff" strokeWidth={2} />
+                    <Text style={styles.addMemberBtnText}>Add Member</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {loadingMembers ? (
+                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : members.length === 0 ? (
+                <View style={styles.emptyStateWrap}>
+                  <Text style={[styles.emptyStateSub, { color: colors.mutedForeground }]}>
+                    No members found.
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.itemsList}>
+                  {members.map((m) => {
+                    const prof = m.profile || ({} as any);
+                    const memberName = prof.name || prof.email?.split('@')[0] || (m.user_id === currentUserId ? 'You' : 'Member');
+                    const memberInitials = memberName.slice(0, 2).toUpperCase();
+                    const isMemberAdmin = m.role === 'admin' || (conversation?.created_by === m.user_id);
+                    const isSelf = m.user_id === currentUserId;
+
+                    return (
+                      <View
+                        key={m.id || m.user_id}
+                        style={[
+                          styles.memberCard,
+                          {
+                            backgroundColor: isDark ? colors.card : '#ffffff',
+                            borderColor: colors.border,
+                          },
+                        ]}
+                      >
+                        {/* Avatar */}
+                        <View
+                          style={[
+                            styles.memberAvatar,
+                            {
+                              backgroundColor: `${colors.primary}18`,
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.memberAvatarText, { color: colors.primary }]}>
+                            {memberInitials}
+                          </Text>
+                        </View>
+
+                        {/* Details */}
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <Text
+                              style={[styles.memberNameText, { color: colors.foreground }]}
+                              numberOfLines={1}
+                            >
+                              {isSelf ? `${memberName} (You)` : memberName}
+                            </Text>
+                            {isMemberAdmin && (
+                              <View
+                                style={[
+                                  styles.adminBadge,
+                                  { backgroundColor: isDark ? '#4338ca' : '#e0e7ff' },
+                                ]}
+                              >
+                                <Shield size={10} color={isDark ? '#c7d2fe' : '#4338ca'} />
+                                <Text
+                                  style={[
+                                    styles.adminBadgeText,
+                                    { color: isDark ? '#c7d2fe' : '#4338ca' },
+                                  ]}
+                                >
+                                  Admin
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text
+                            style={[styles.memberSubText, { color: colors.mutedForeground }]}
+                            numberOfLines={1}
+                          >
+                            {prof.mobile || prof.email || 'Group participant'}
+                          </Text>
+                        </View>
+
+                        {/* Admin Action: Remove Member */}
+                        {isAdmin && !isSelf && (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            onPress={() => handleRemoveMemberClick(m.user_id)}
+                            disabled={removingMemberId === m.user_id}
+                            style={styles.removeMemberBtn}
+                            accessibilityLabel={`Remove ${memberName}`}
+                          >
+                            {removingMemberId === m.user_id ? (
+                              <ActivityIndicator size="small" color="#ef4444" />
+                            ) : (
+                              <Trash2 size={16} color="#ef4444" strokeWidth={1.8} />
+                            )}
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+
           {/* TAB 1: MEDIA */}
           {activeTab === 'media' && (
             mediaItems.length === 0 ? (
@@ -687,6 +974,131 @@ export function ContactInfoView({
           )}
         </View>
       </ScrollView>
+
+      {/* Add Member Modal Dialog */}
+      <Modal
+        visible={isAddMemberModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsAddMemberModalOpen(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsAddMemberModalOpen(false)}
+            activeOpacity={1}
+          />
+          <View
+            style={[
+              styles.dialogCard,
+              {
+                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.dialogHeader}>
+              <Text style={[styles.dialogTitle, { color: colors.foreground }]}>
+                Add Member to Group
+              </Text>
+              <TouchableOpacity
+                onPress={() => setIsAddMemberModalOpen(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={17} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Search contacts to add */}
+            <View
+              style={[
+                styles.searchBox,
+                {
+                  backgroundColor: isDark ? '#27272a' : '#f8fafc',
+                  borderColor: colors.border,
+                },
+              ]}
+            >
+              <Search size={14} color={colors.mutedForeground} />
+              <TextInput
+                value={memberSearchQuery}
+                onChangeText={setMemberSearchQuery}
+                placeholder="Search contacts..."
+                placeholderTextColor={colors.mutedForeground}
+                style={[styles.searchInput, { color: colors.foreground }]}
+              />
+            </View>
+
+            {/* Available Contacts List */}
+            <ScrollView style={{ maxHeight: 240 }} showsVerticalScrollIndicator={false}>
+              {availableContacts.length === 0 ? (
+                <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 12, color: colors.mutedForeground, fontFamily: 'Open Sans' }}>
+                    No contacts available to add.
+                  </Text>
+                </View>
+              ) : (
+                availableContacts.map((c) => {
+                  const targetUid = c.contactUserId || c.id;
+                  const isAdding = addingMemberId === targetUid;
+
+                  return (
+                    <View
+                      key={c.id}
+                      style={[
+                        styles.contactRow,
+                        { borderBottomColor: isDark ? '#27272a' : '#f1f5f9' },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.smallAvatar,
+                          { backgroundColor: `${colors.primary}18` },
+                        ]}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                          {c.name.slice(0, 2).toUpperCase()}
+                        </Text>
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{ fontSize: 13, fontWeight: '600', color: colors.foreground, fontFamily: 'Open Sans' }}
+                          numberOfLines={1}
+                        >
+                          {c.name}
+                        </Text>
+                        <Text
+                          style={{ fontSize: 11, color: colors.mutedForeground, fontFamily: 'Open Sans' }}
+                          numberOfLines={1}
+                        >
+                          {c.mobile || c.email}
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => handleAddMemberClick(targetUid)}
+                        disabled={isAdding}
+                        style={[
+                          styles.addMemberActionBtn,
+                          { backgroundColor: colors.primary },
+                        ]}
+                      >
+                        {isAdding ? (
+                          <ActivityIndicator size="small" color="#ffffff" />
+                        ) : (
+                          <Text style={styles.addMemberActionText}>Add</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -880,5 +1292,142 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     fontFamily: 'Open Sans',
     marginTop: 2,
+  },
+  membersHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 4,
+  },
+  membersCountLabel: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    fontFamily: 'Open Sans',
+  },
+  addMemberBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addMemberBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffff',
+    fontFamily: 'Open Sans',
+  },
+  memberCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  memberAvatarText: {
+    fontSize: 13,
+    fontWeight: '700',
+    fontFamily: 'Open Sans',
+  },
+  memberNameText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
+  },
+  memberSubText: {
+    fontSize: 11.5,
+    fontFamily: 'Open Sans',
+    marginTop: 2,
+  },
+  adminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  adminBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'Open Sans',
+  },
+  removeMemberBtn: {
+    padding: 8,
+    borderRadius: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  dialogCard: {
+    width: 360,
+    maxWidth: '92%',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
+  dialogHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dialogTitle: {
+    fontSize: 14.5,
+    fontWeight: '700',
+    fontFamily: 'Open Sans',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 12.5,
+    fontFamily: 'Open Sans',
+  },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  smallAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addMemberActionBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  addMemberActionText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+    color: '#ffffff',
+    fontFamily: 'Open Sans',
   },
 });

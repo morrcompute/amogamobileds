@@ -410,8 +410,8 @@ export function ChatPreviews({ entry }: ChatPreviewsProps) {
               {
                 id: String(Date.now()),
                 name: newC.name,
-                mobile: newC.mobile,
-                email: newC.email,
+                mobile: newC.mobile || '',
+                email: newC.email || '',
                 initials: newC.name.slice(0, 2).toUpperCase(),
                 isEnabled: true,
               },

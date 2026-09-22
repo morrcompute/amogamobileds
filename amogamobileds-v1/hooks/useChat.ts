@@ -12,6 +12,9 @@ import {
   EnrichedConversation,
   getOrCreateDirectConversation,
   createGroupConversation,
+  addConversationMember,
+  removeConversationMember,
+  getConversationMembers,
 } from '../lib/chat-service';
 import type { ChatMessage, Profile } from '../lib/database.types';
 import {
@@ -154,13 +157,14 @@ export function useChat() {
     async (convoId: string) => {
       if (!user) return;
       setLoadingMessages(true);
+      // Immediately clear messages so previous conversation's messages don't bleed through
+      setMessages([]);
 
       // Step A: Load instantly from local storage (0ms offline latency)
       try {
         const localMsgs = await LocalChatService.getMessages(convoId, user.id);
         if (localMsgs && localMsgs.length > 0) {
           setMessages(localMsgs as any);
-          setLoadingMessages(false);
         }
       } catch (err) {
         console.warn('Could not read local messages:', err);
@@ -198,6 +202,9 @@ export function useChat() {
             sender_message_id: m.sender_message_id,
           }));
           await LocalChatService.saveMessages(toCache);
+        } else if (msgs) {
+          // If remote returned empty array, ensure messages is empty
+          setMessages([]);
         }
       } catch (err) {
         console.warn('Offline / Network error fetching remote messages, using local cache:', err);
@@ -252,7 +259,27 @@ export function useChat() {
 
           if (newMsg.conversation_id === activeConvoIdRef.current) {
             setMessages((prev) => {
+              // 1. If already exists by server ID, don't duplicate
               if (prev.some((m) => m.id === newMsg.id)) return prev;
+
+              // 2. If matching sender_message_id with an optimistic local record, replace it
+              if (newMsg.sender_message_id && prev.some((m) => m.id === newMsg.sender_message_id)) {
+                return prev.map((m) => (m.id === newMsg.sender_message_id ? newMsg : m));
+              }
+
+              // 3. If sender is self and a pending optimistic local message matches, replace it
+              const pendingIdx = prev.findIndex(
+                (m) =>
+                  m.id?.startsWith('local-') &&
+                  m.sender_user_id === newMsg.sender_user_id &&
+                  m.message === newMsg.message
+              );
+              if (pendingIdx !== -1) {
+                const next = [...prev];
+                next[pendingIdx] = newMsg;
+                return next;
+              }
+
               return [...prev, newMsg];
             });
           }
@@ -461,10 +488,12 @@ export function useChat() {
         messageText: text,
         messageType: 'text',
         replyToMessageId: reply?.id,
+        senderMessageId: tempId,
       });
 
       if (sent) {
-        await LocalChatService.updateMessageStatus(tempId, { sync_status: 'synced' });
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? sent : m)));
+        await LocalChatService.updateMessageStatus(tempId, { id: sent.id, sync_status: 'synced' });
       }
     } catch (err) {
       console.warn('Message saved locally (offline / network error syncing to Supabase):', err);
@@ -855,6 +884,24 @@ export function useChat() {
     }
   };
 
+  // Add member to group
+  const addMemberToGroup = async (convoId: string, targetUserId: string) => {
+    const success = await addConversationMember(convoId, targetUserId);
+    if (success) {
+      await loadConversations();
+    }
+    return success;
+  };
+
+  // Remove member from group
+  const removeMemberFromGroup = async (convoId: string, targetUserId: string) => {
+    const success = await removeConversationMember(convoId, targetUserId);
+    if (success) {
+      await loadConversations();
+    }
+    return success;
+  };
+
   return {
     user,
     profile,
@@ -879,6 +926,8 @@ export function useChat() {
     handleForwardMessage,
     startDirectChat,
     startGroupChat,
+    addMemberToGroup,
+    removeMemberFromGroup,
     loadConversations,
     isOtherTyping,
     sendTypingStatus,

@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
       web: {
         outlineStyle: 'none',
         outlineWidth: 0,
-        outline: 'none',
         boxShadow: 'none',
       } as any,
     }),

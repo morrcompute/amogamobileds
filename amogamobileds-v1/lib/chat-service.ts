@@ -177,6 +177,7 @@ export async function sendMessage(params: {
   duration?: number;
   replyToMessageId?: string;
   replyToUserId?: string;
+  senderMessageId?: string;
 }): Promise<ChatMessage | null> {
   try {
     const {
@@ -191,6 +192,7 @@ export async function sendMessage(params: {
       duration,
       replyToMessageId,
       replyToUserId,
+      senderMessageId,
     } = params;
 
     // 1. Get all members in the conversation
@@ -210,6 +212,7 @@ export async function sendMessage(params: {
       conversation_id: conversationId,
       owner_user_id: senderId,
       sender_user_id: senderId,
+      sender_message_id: senderMessageId || null,
       message: messageText,
       message_type: messageType,
       direction: 'Sent' as const,
@@ -244,6 +247,7 @@ export async function sendMessage(params: {
         conversation_id: conversationId,
         owner_user_id: m.user_id,
         sender_user_id: senderId,
+        sender_message_id: senderMessageId || null,
         message: messageText,
         message_type: messageType,
         direction: 'Received' as const,
@@ -258,7 +262,6 @@ export async function sendMessage(params: {
         reply: !!replyToMessageId,
         replyto_message_id: replyToMessageId || null,
         replyto_user_id: replyToUserId || null,
-        sender_message_id: senderMessage.id,
       }));
 
       await supabase.from('chat_messages').insert(recipientCopies);
@@ -653,5 +656,116 @@ export async function searchProfiles(
   } catch (err) {
     console.error('Error in searchProfiles:', err);
     return [];
+  }
+}
+
+export interface ConversationMemberWithProfile {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: 'admin' | 'member' | string;
+  joined_at?: string;
+  profile?: {
+    id: string;
+    name?: string;
+    email?: string;
+    mobile?: string;
+    avatar?: string;
+    avatar_url?: string;
+    online?: boolean;
+    last_seen?: string;
+  };
+}
+
+/**
+ * Fetch all members of a conversation with their profiles.
+ */
+export async function getConversationMembers(
+  conversationId: string
+): Promise<ConversationMemberWithProfile[]> {
+  try {
+    const { data: members, error: memErr } = await supabase
+      .from('conversation_members')
+      .select('id, conversation_id, user_id, role, joined_at')
+      .eq('conversation_id', conversationId);
+
+    if (memErr || !members) {
+      console.error('Error fetching conversation members:', memErr);
+      return [];
+    }
+
+    const userIds = members.map((m) => m.user_id).filter(Boolean);
+    if (userIds.length === 0) return [];
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, name, email, mobile, avatar, avatar_url, online, last_seen')
+      .in('id', userIds);
+
+    const profileMap: Record<string, any> = {};
+    if (profiles) {
+      profiles.forEach((p) => {
+        profileMap[p.id] = p;
+      });
+    }
+
+    return members.map((m) => ({
+      ...m,
+      profile: profileMap[m.user_id] || { id: m.user_id, name: 'User' },
+    }));
+  } catch (err) {
+    console.error('Error in getConversationMembers:', err);
+    return [];
+  }
+}
+
+/**
+ * Add a member to a group conversation.
+ */
+export async function addConversationMember(
+  conversationId: string,
+  userId: string,
+  role: string = 'member'
+): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('conversation_members').insert({
+      conversation_id: conversationId,
+      user_id: userId,
+      role,
+    });
+
+    if (error) {
+      console.error('Error adding conversation member:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error in addConversationMember:', err);
+    return false;
+  }
+}
+
+/**
+ * Remove a member from a group conversation.
+ */
+export async function removeConversationMember(
+  conversationId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('conversation_members')
+      .delete()
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error removing conversation member:', error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('Error in removeConversationMember:', err);
+    return false;
   }
 }
