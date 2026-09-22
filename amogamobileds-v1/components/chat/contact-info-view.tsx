@@ -26,7 +26,6 @@ import {
   Download,
   Users,
   UserPlus,
-  Trash2,
   Shield,
   Check,
 } from 'lucide-react-native';
@@ -732,13 +731,16 @@ export function ContactInfoView({
                             activeOpacity={0.7}
                             onPress={() => handleRemoveMemberClick(m.user_id)}
                             disabled={removingMemberId === m.user_id}
-                            style={styles.removeMemberBtn}
+                            style={[
+                              styles.removeMemberBtn,
+                              { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)' },
+                            ]}
                             accessibilityLabel={`Remove ${memberName}`}
                           >
                             {removingMemberId === m.user_id ? (
                               <ActivityIndicator size="small" color="#ef4444" />
                             ) : (
-                              <Trash2 size={16} color="#ef4444" strokeWidth={1.8} />
+                              <X size={15} color="#ef4444" strokeWidth={2.2} />
                             )}
                           </TouchableOpacity>
                         )}
@@ -1363,8 +1365,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Open Sans',
   },
   removeMemberBtn: {
-    padding: 8,
-    borderRadius: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBackdrop: {
     flex: 1,
