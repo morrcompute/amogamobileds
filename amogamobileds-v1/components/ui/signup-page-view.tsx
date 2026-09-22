@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Platform,
   Text,
@@ -22,6 +22,7 @@ import { useToast } from './toast';
 import { useColor } from '../../hooks/useColor';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { useColorTheme } from '../../providers/color-theme-provider';
+import { usePhoneHint } from '../../hooks/use-phone-hint';
 import { supabase } from '../../lib/supabase';
 import {
   AuthCardContainer,
@@ -33,8 +34,9 @@ const RESEND_COOLDOWN = 60;
 
 export interface SignupPageViewProps {
   onSuccess?: (user: any, session?: any) => void;
-  onSignInPress?: () => void;
+  onSignInPress?: (phone?: string) => void;
   initialMethod?: 'email' | 'phone';
+  initialPhone?: string;
   supabaseClient?: any;
 }
 
@@ -42,6 +44,7 @@ export function SignupPageView({
   onSuccess,
   onSignInPress,
   initialMethod = 'email',
+  initialPhone = '',
   supabaseClient,
 }: SignupPageViewProps) {
   const client = supabaseClient || supabase;
@@ -63,11 +66,30 @@ export function SignupPageView({
   const cardBg = isDark ? '#141721' : '#f8fafc';
   const successColor = '#10b981';
 
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(initialMethod);
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(initialPhone ? 'phone' : initialMethod);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(initialPhone || '');
   const [agree, setAgree] = useState(false);
+
+  // Phone number hint hook (Android Google Play Services)
+  const { isAvailable: isPhoneHintAvailable, loading: hintLoading, requestHint } = usePhoneHint();
+  const hasAutoPromptedRef = useRef(false);
+
+  const handlePickPhoneHint = useCallback(async () => {
+    const res = await requestHint();
+    if (res && res.e164) {
+      setPhone(res.e164);
+    }
+  }, [requestHint]);
+
+  // Auto-trigger hint prompt once when user is on phone auth method and phone is empty
+  useEffect(() => {
+    if (authMethod === 'phone' && isPhoneHintAvailable && !phone && !hasAutoPromptedRef.current) {
+      hasAutoPromptedRef.current = true;
+      handlePickPhoneHint();
+    }
+  }, [authMethod, isPhoneHintAvailable, phone, handlePickPhoneHint]);
 
   // OTP flow states
   const [step, setStep] = useState<'form' | 'otp' | 'success'>('form');
@@ -548,7 +570,7 @@ export function SignupPageView({
           <TouchableOpacity
             onPress={() => {
               if (onSignInPress) {
-                onSignInPress();
+                onSignInPress(authMethod === 'phone' && phone ? phone : undefined);
               }
             }}
             activeOpacity={0.7}
@@ -708,7 +730,15 @@ export function SignupPageView({
                 style={{ flex: 1, fontSize: 13.5, color: text, padding: 0 }}
                 value={phone}
                 onChangeText={setPhone}
+                onFocus={() => {
+                  if (isPhoneHintAvailable && !phone && !hasAutoPromptedRef.current) {
+                    hasAutoPromptedRef.current = true;
+                    handlePickPhoneHint();
+                  }
+                }}
                 keyboardType="phone-pad"
+                autoComplete="tel"
+                textContentType="telephoneNumber"
                 autoCapitalize="none"
                 placeholder="+1 234 567 8900"
                 placeholderTextColor="#94a3b8"

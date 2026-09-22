@@ -8,3 +8,4 @@ export * from './useKeyboardHeight';
 export * from './useModeToggle';
 export * from './useProfile';
 export * from './useTasks';
+export * from './use-phone-hint';

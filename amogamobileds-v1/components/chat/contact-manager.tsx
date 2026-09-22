@@ -23,11 +23,11 @@ import { useTheme } from '../../providers/theme-provider'
 export interface ContactItem {
   id: string
   name: string
-  email: string
+  email?: string
+  mobile?: string
   avatarUrl?: string
   initials?: string
   isEnabled?: boolean
-  mobile?: string
   contactUserId?: string
 }
 
@@ -40,7 +40,7 @@ export interface ContactManagerProps {
   onToggleStatus?: (contact: ContactItem, enabled: boolean) => void
   onEditClick?: (contact: ContactItem) => void
   onDeleteClick?: (contact: ContactItem) => void
-  onAddContact?: (newContact: { name: string; email: string }) => void
+  onAddContact?: (newContact: { name: string; mobile?: string; email?: string }) => void
   style?: any
 }
 
@@ -73,7 +73,7 @@ export function ContactManager({
   contacts = [],
   title = 'Contact Manager',
   description = 'Manage your saved contacts and start direct chat conversations.',
-  searchPlaceholder = 'Search contacts by name or email...',
+  searchPlaceholder = 'Search contacts by name or mobile...',
   onChatClick,
   onToggleStatus,
   onEditClick,
@@ -87,21 +87,35 @@ export function ContactManager({
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [newName, setNewName] = useState('')
+  const [newMobile, setNewMobile] = useState('')
   const [newEmail, setNewEmail] = useState('')
+
+  const handleMobileChange = (val: string) => {
+    let cleaned = val.replace(/[^\d+]/g, '')
+    if (cleaned.includes('+')) {
+      cleaned = '+' + cleaned.replace(/\+/g, '')
+    }
+    setNewMobile(cleaned)
+  }
+
+  const isFormValid = newName.trim().length > 0 && newMobile.trim().length >= 8
 
   const filteredContacts = contacts.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.email.toLowerCase().includes(searchQuery.toLowerCase())
+      (c.email && c.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (c.mobile && c.mobile.includes(searchQuery))
   )
 
   const handleAddSubmit = () => {
-    if (!newEmail.trim()) return
+    if (!isFormValid) return
     onAddContact?.({
-      name: newName.trim() || newEmail.split('@')[0],
-      email: newEmail.trim(),
+      name: newName.trim(),
+      mobile: newMobile.trim(),
+      email: newEmail.trim() || undefined,
     })
     setNewName('')
+    setNewMobile('')
     setNewEmail('')
     setIsAddOpen(false)
   }
@@ -220,7 +234,7 @@ export function ContactManager({
                     ]}
                     numberOfLines={1}
                   >
-                    {contact.email}
+                    {contact.mobile || contact.email}
                   </Text>
                 </View>
               </View>
@@ -311,7 +325,7 @@ export function ContactManager({
               <Text
                 style={[styles.inputLabel, { color: colors.mutedForeground }]}
               >
-                Name (Optional)
+                Name *
               </Text>
               <TextInput
                 value={newName}
@@ -331,12 +345,37 @@ export function ContactManager({
               <Text
                 style={[styles.inputLabel, { color: colors.mutedForeground }]}
               >
-                Email Address *
+                Mobile No *
+              </Text>
+              <TextInput
+                value={newMobile}
+                onChangeText={handleMobileChange}
+                placeholder="e.g. +919948035558"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="phone-pad"
+                autoCapitalize="none"
+                style={[
+                  styles.dialogInput,
+                  {
+                    backgroundColor: isDark ? '#27272a' : '#f8fafc',
+                    borderColor: colors.border,
+                    color: colors.foreground,
+                  },
+                ]}
+              />
+              <Text style={{ fontSize: 10.5, color: colors.mutedForeground, marginTop: -4 }}>
+                Include country code (e.g. +91, +1)
+              </Text>
+
+              <Text
+                style={[styles.inputLabel, { color: colors.mutedForeground }]}
+              >
+                Email Address (Optional)
               </Text>
               <TextInput
                 value={newEmail}
                 onChangeText={setNewEmail}
-                placeholder="sarah@example.com"
+                placeholder="e.g. sarah@example.com"
                 placeholderTextColor={colors.mutedForeground}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -370,9 +409,13 @@ export function ContactManager({
               </Pressable>
               <Pressable
                 onPress={handleAddSubmit}
+                disabled={!isFormValid}
                 style={[
                   styles.confirmBtn,
-                  { backgroundColor: isDark ? '#4338ca' : '#4f46e5' },
+                  {
+                    backgroundColor: isDark ? '#4338ca' : '#4f46e5',
+                    opacity: isFormValid ? 1 : 0.5,
+                  },
                 ]}
               >
                 <Text style={styles.confirmBtnText}>Add Contact</Text>

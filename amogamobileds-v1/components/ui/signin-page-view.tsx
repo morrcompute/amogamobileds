@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Platform,
   Text,
@@ -13,12 +13,14 @@ import {
   ShieldCheck,
   RefreshCw,
   Edit3,
+  Sparkles,
 } from 'lucide-react-native';
 import { Button } from './button';
 import { useToast } from './toast';
 import { useColor } from '../../hooks/useColor';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { useColorTheme } from '../../providers/color-theme-provider';
+import { usePhoneHint } from '../../hooks/use-phone-hint';
 import { supabase } from '../../lib/supabase';
 import {
   AuthCardContainer,
@@ -30,8 +32,9 @@ const RESEND_COOLDOWN = 60;
 
 export interface SigninPageViewProps {
   onSuccess?: (user: any, session?: any) => void;
-  onSignUpPress?: () => void;
+  onSignUpPress?: (phone?: string) => void;
   initialMethod?: 'email' | 'phone';
+  initialPhone?: string;
   supabaseClient?: any;
 }
 
@@ -39,6 +42,7 @@ export function SigninPageView({
   onSuccess,
   onSignUpPress,
   initialMethod = 'email',
+  initialPhone = '',
   supabaseClient,
 }: SigninPageViewProps) {
   const client = supabaseClient || supabase;
@@ -59,9 +63,9 @@ export function SigninPageView({
   const muted = isDark ? '#94a3b8' : '#64748b';
   const cardBg = isDark ? '#141721' : '#f8fafc';
 
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(initialMethod);
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>(initialPhone ? 'phone' : initialMethod);
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(initialPhone || '');
 
   // Flow states
   const [step, setStep] = useState<'form' | 'otp'>('form');
@@ -72,6 +76,26 @@ export function SigninPageView({
   const [countdown, setCountdown] = useState(0);
   const [banner, setBanner] = useState<AuthBanner | null>(null);
   const [notRegistered, setNotRegistered] = useState(false);
+
+  // Phone number hint hook (Android Google Play Services)
+  const { isAvailable: isPhoneHintAvailable, loading: hintLoading, requestHint } = usePhoneHint();
+  const hasAutoPromptedRef = useRef(false);
+
+  const handlePickPhoneHint = useCallback(async () => {
+    const res = await requestHint();
+    if (res && res.e164) {
+      setPhone(res.e164);
+      if (notRegistered) setNotRegistered(false);
+    }
+  }, [requestHint, notRegistered]);
+
+  // Auto-trigger hint prompt once when user is on phone auth method
+  useEffect(() => {
+    if (authMethod === 'phone' && isPhoneHintAvailable && !phone && !hasAutoPromptedRef.current) {
+      hasAutoPromptedRef.current = true;
+      handlePickPhoneHint();
+    }
+  }, [authMethod, isPhoneHintAvailable, phone, handlePickPhoneHint]);
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -448,7 +472,7 @@ export function SigninPageView({
           <TouchableOpacity
             onPress={() => {
               if (onSignUpPress) {
-                onSignUpPress();
+                onSignUpPress(authMethod === 'phone' && phone ? phone : undefined);
               }
             }}
             activeOpacity={0.7}
@@ -479,7 +503,7 @@ export function SigninPageView({
           <Button
             onPress={() => {
               if (onSignUpPress) {
-                onSignUpPress();
+                onSignUpPress(authMethod === 'phone' && phone ? phone : undefined);
               }
             }}
             style={{ height: 38, borderRadius: 6, marginTop: 2 }}
@@ -619,7 +643,15 @@ export function SigninPageView({
                   setPhone(val);
                   if (notRegistered) setNotRegistered(false);
                 }}
+                onFocus={() => {
+                  if (isPhoneHintAvailable && !phone && !hasAutoPromptedRef.current) {
+                    hasAutoPromptedRef.current = true;
+                    handlePickPhoneHint();
+                  }
+                }}
                 keyboardType="phone-pad"
+                autoComplete="tel"
+                textContentType="telephoneNumber"
                 autoCapitalize="none"
                 placeholder="+1 234 567 8900"
                 placeholderTextColor="#94a3b8"

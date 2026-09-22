@@ -105,6 +105,7 @@
     "expo-location": "~57.0.16",
     "expo-media-library": "~57.0.3",
     "expo-navigation-bar": "~57.0.2",
+    "expo-phone-number-hint": "^0.6.0",
     "expo-router": "~57.0.8",
     "expo-secure-store": "~57.0.1",
     "expo-splash-screen": "~57.0.5",
