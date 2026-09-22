@@ -98,7 +98,10 @@ export function ContactManager({
     setNewMobile(cleaned)
   }
 
-  const isFormValid = newName.trim().length > 0 && newMobile.trim().length >= 8
+  const isFormValid =
+    newName.trim().length > 0 &&
+    newEmail.trim().length > 0 &&
+    newEmail.includes('@')
 
   const filteredContacts = contacts.filter(
     (c) =>
@@ -111,8 +114,8 @@ export function ContactManager({
     if (!isFormValid) return
     onAddContact?.({
       name: newName.trim(),
-      mobile: newMobile.trim(),
-      email: newEmail.trim() || undefined,
+      mobile: newMobile.trim() || undefined,
+      email: newEmail.trim(),
     })
     setNewName('')
     setNewMobile('')
@@ -345,7 +348,29 @@ export function ContactManager({
               <Text
                 style={[styles.inputLabel, { color: colors.mutedForeground }]}
               >
-                Mobile No *
+                Email Address *
+              </Text>
+              <TextInput
+                value={newEmail}
+                onChangeText={setNewEmail}
+                placeholder="e.g. sarah@example.com"
+                placeholderTextColor={colors.mutedForeground}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={[
+                  styles.dialogInput,
+                  {
+                    backgroundColor: isDark ? '#27272a' : '#f8fafc',
+                    borderColor: colors.border,
+                    color: colors.foreground,
+                  },
+                ]}
+              />
+
+              <Text
+                style={[styles.inputLabel, { color: colors.mutedForeground }]}
+              >
+                Mobile No (Optional)
               </Text>
               <TextInput
                 value={newMobile}
@@ -366,28 +391,6 @@ export function ContactManager({
               <Text style={{ fontSize: 10.5, color: colors.mutedForeground, marginTop: -4 }}>
                 Include country code (e.g. +91, +1)
               </Text>
-
-              <Text
-                style={[styles.inputLabel, { color: colors.mutedForeground }]}
-              >
-                Email Address (Optional)
-              </Text>
-              <TextInput
-                value={newEmail}
-                onChangeText={setNewEmail}
-                placeholder="e.g. sarah@example.com"
-                placeholderTextColor={colors.mutedForeground}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                style={[
-                  styles.dialogInput,
-                  {
-                    backgroundColor: isDark ? '#27272a' : '#f8fafc',
-                    borderColor: colors.border,
-                    color: colors.foreground,
-                  },
-                ]}
-              />
             </View>
 
             <View style={styles.dialogFooter}>
