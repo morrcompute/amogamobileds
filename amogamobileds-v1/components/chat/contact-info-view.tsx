@@ -51,6 +51,8 @@ export interface ContactInfoViewProps {
   onOpenDoc?: (url: string, name?: string) => void;
   onAddMember?: (userId: string) => Promise<boolean> | void;
   onRemoveMember?: (userId: string) => Promise<boolean> | void;
+  onAudioCall?: () => void;
+  onVideoCall?: () => void;
   style?: any;
 }
 
@@ -68,6 +70,8 @@ export function ContactInfoView({
   onOpenDoc,
   onAddMember,
   onRemoveMember,
+  onAudioCall,
+  onVideoCall,
   style,
 }: ContactInfoViewProps) {
   const { colors, resolvedMode } = useTheme();
@@ -426,7 +430,9 @@ export function ContactInfoView({
                   borderColor: colors.border,
                 },
               ]}
-              onPress={() => {}}
+              onPress={onAudioCall}
+              accessibilityRole="button"
+              accessibilityLabel="Audio Call"
             >
               <Phone size={18} color="#10b981" />
               <Text style={[styles.actionBtnLabel, { color: colors.foreground }]}>
@@ -442,7 +448,9 @@ export function ContactInfoView({
                   borderColor: colors.border,
                 },
               ]}
-              onPress={() => {}}
+              onPress={onVideoCall}
+              accessibilityRole="button"
+              accessibilityLabel="Video Call"
             >
               <Video size={18} color="#3b82f6" />
               <Text style={[styles.actionBtnLabel, { color: colors.foreground }]}>

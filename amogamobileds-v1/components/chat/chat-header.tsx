@@ -22,6 +22,8 @@ import {
   Sun,
   Moon,
   X,
+  Phone,
+  Video,
 } from 'lucide-react-native'
 import { useTheme } from '../../providers/theme-provider'
 
@@ -34,6 +36,8 @@ export interface ChatHeaderProps {
   memberCount?: number
   actions?: React.ReactNode
   showDefaultActions?: boolean
+  onAudioCall?: () => void
+  onVideoCall?: () => void
   onAvatarClick?: () => void
   onNotificationClick?: () => void
   onFlagClick?: () => void
@@ -58,6 +62,8 @@ export function ChatHeader({
   memberCount,
   actions,
   showDefaultActions = true,
+  onAudioCall,
+  onVideoCall,
   onAvatarClick,
   onNotificationClick,
   onFlagClick,
@@ -175,6 +181,36 @@ export function ChatHeader({
           actions
         ) : showDefaultActions ? (
           <View style={styles.actionIconsRow}>
+            {/* Audio Call */}
+            {onAudioCall && (
+              <Pressable
+                onPress={onAudioCall}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  pressed && { backgroundColor: colors.secondary },
+                ]}
+                hitSlop={6}
+                accessibilityLabel="Audio Call"
+              >
+                <Phone size={16} color="#10b981" strokeWidth={2} />
+              </Pressable>
+            )}
+
+            {/* Video Call */}
+            {onVideoCall && (
+              <Pressable
+                onPress={onVideoCall}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  pressed && { backgroundColor: colors.secondary },
+                ]}
+                hitSlop={6}
+                accessibilityLabel="Video Call"
+              >
+                <Video size={16} color="#3b82f6" strokeWidth={2} />
+              </Pressable>
+            )}
+
             {/* Outline Bell Icon in Amber (Act on this) */}
             <Pressable
               onPress={onNotificationClick}
@@ -256,6 +292,36 @@ export function ChatHeader({
               },
             ]}
           >
+            {onAudioCall && (
+              <Pressable
+                onPress={() => {
+                  setIsMenuOpen(false)
+                  onAudioCall()
+                }}
+                style={styles.menuOption}
+              >
+                <Phone size={15} color="#10b981" />
+                <Text style={[styles.menuOptionText, { color: colors.foreground }]}>
+                  Audio Call
+                </Text>
+              </Pressable>
+            )}
+
+            {onVideoCall && (
+              <Pressable
+                onPress={() => {
+                  setIsMenuOpen(false)
+                  onVideoCall()
+                }}
+                style={styles.menuOption}
+              >
+                <Video size={15} color="#3b82f6" />
+                <Text style={[styles.menuOptionText, { color: colors.foreground }]}>
+                  Video Call
+                </Text>
+              </Pressable>
+            )}
+
             <Pressable
               onPress={() => {
                 setIsMenuOpen(false)
