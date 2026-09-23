@@ -30,6 +30,12 @@ import {
   Pause,
   Mic,
   CornerUpLeft,
+  Phone,
+  PhoneIncoming,
+  PhoneOutgoing,
+  PhoneMissed,
+  Video,
+  VideoOff,
 } from 'lucide-react-native'
 import { useTheme } from '../../providers/theme-provider'
 import { ChatLocationCard } from './chat-location-card'
@@ -38,6 +44,121 @@ import * as WebBrowser from 'expo-web-browser'
 import { WebView } from 'react-native-webview'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { useAudioPlayer } from 'expo-audio'
+
+function CallLogCard({
+  content,
+  isOwn,
+  onCallClick,
+}: {
+  content?: string;
+  isOwn?: boolean;
+  onCallClick?: () => void;
+}) {
+  const { colors, resolvedMode } = useTheme();
+  const isDark = resolvedMode === 'dark';
+
+  const isMissed =
+    content?.toLowerCase().includes('missed') ||
+    content?.toLowerCase().includes('cancelled') ||
+    content?.toLowerCase().includes('rejected') ||
+    content?.toLowerCase().includes('declined');
+  const isVideo = content?.toLowerCase().includes('video');
+
+  const getIcon = () => {
+    if (isMissed) {
+      return isVideo ? (
+        <VideoOff size={18} color="#ef4444" strokeWidth={2} />
+      ) : (
+        <PhoneMissed size={18} color="#ef4444" strokeWidth={2} />
+      );
+    }
+    if (isVideo) {
+      return <Video size={18} color="#3b82f6" strokeWidth={2} />;
+    }
+    return isOwn ? (
+      <PhoneOutgoing size={18} color="#10b981" strokeWidth={2} />
+    ) : (
+      <PhoneIncoming size={18} color="#10b981" strokeWidth={2} />
+    );
+  };
+
+  const badgeBg = isMissed
+    ? (isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2')
+    : isVideo
+    ? (isDark ? 'rgba(59, 130, 246, 0.15)' : '#dbeafe')
+    : (isDark ? 'rgba(16, 185, 129, 0.15)' : '#d1fae5');
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onCallClick}
+      style={[
+        callLogStyles.card,
+        {
+          backgroundColor: isDark ? '#18181b' : '#ffffff',
+          borderColor: isMissed
+            ? (isDark ? 'rgba(239, 68, 68, 0.3)' : '#fca5a5')
+            : (isDark ? colors.border : '#e2e8f0'),
+        },
+      ]}
+    >
+      <View style={[callLogStyles.iconCircle, { backgroundColor: badgeBg }]}>
+        {getIcon()}
+      </View>
+      <View style={callLogStyles.infoColumn}>
+        <Text
+          style={[
+            callLogStyles.title,
+            { color: isMissed ? '#ef4444' : colors.foreground },
+          ]}
+          numberOfLines={1}
+        >
+          {content || (isVideo ? 'Video call' : 'Audio call')}
+        </Text>
+        <Text style={[callLogStyles.subtitle, { color: colors.mutedForeground }]}>
+          {isMissed ? 'Missed call' : (isVideo ? 'Video call' : 'Voice call')}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const callLogStyles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginVertical: 4,
+    minWidth: 200,
+    maxWidth: 280,
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoColumn: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 13.5,
+    fontWeight: '600',
+    fontFamily: 'Open Sans',
+  },
+  subtitle: {
+    fontSize: 11,
+    fontFamily: 'Open Sans',
+    marginTop: 1,
+  },
+});
+
 
 /** Standalone component so useVideoPlayer hook is called at component level (not inside .map()) */
 function VideoAttachmentPlayer({ att }: { att: ChatAttachmentItem }) {
@@ -353,6 +474,7 @@ export interface ChatBubbleProps {
   onAttachmentPreview?: (attachment: ChatAttachmentItem) => void
   onAttachmentClick?: (attachment: ChatAttachmentItem) => void
   onLocationClick?: (location: ChatLocationItem) => void
+  onCallClick?: () => void
   style?: any
 }
 
@@ -375,6 +497,7 @@ export function ChatBubble({
   onAttachmentPreview,
   onAttachmentClick,
   onLocationClick,
+  onCallClick,
   style,
 }: ChatBubbleProps) {
   const { colors, resolvedMode } = useTheme()
@@ -880,16 +1003,48 @@ export function ChatBubble({
           </View>
         ) : null}
 
-        {/* Plain Text Message */}
-        {content &&
-        !attachments.some((a) => a.name === content || a.url === content) &&
-        (!isFileNameText || (imageAttachments.length === 0 && fileAttachments.length === 0 && videoAttachments.length === 0 && audioAttachments.length === 0 && !location)) ? (
-          <Text
-            style={[styles.messageText, { color: colors.foreground }]}
-          >
-            {content}
-          </Text>
-        ) : null}
+        {/* Call Log Message Card */}
+        {(() => {
+          const isCallLog =
+            !!content &&
+            (content.startsWith('Audio call') ||
+              content.startsWith('Video call') ||
+              content.startsWith('Missed audio call') ||
+              content.startsWith('Missed video call') ||
+              content.startsWith('Missed') ||
+              content.includes('· Cancelled') ||
+              content.includes('· 0s') ||
+              /\b(Audio|Video) call\b/i.test(content));
+
+          if (isCallLog) {
+            return (
+              <CallLogCard
+                content={content}
+                isOwn={isOwn}
+                onCallClick={onCallClick}
+              />
+            );
+          }
+
+          if (
+            content &&
+            !attachments.some((a) => a.name === content || a.url === content) &&
+            (!isFileNameText ||
+              (imageAttachments.length === 0 &&
+                fileAttachments.length === 0 &&
+                videoAttachments.length === 0 &&
+                audioAttachments.length === 0 &&
+                !location))
+          ) {
+            return (
+              <Text style={[styles.messageText, { color: colors.foreground }]}>
+                {content}
+              </Text>
+            );
+          }
+
+          return null;
+        })()}
 
         {/* Timestamp & Status Delivery Checkmarks */}
         <View style={styles.timeStatusRow}>
