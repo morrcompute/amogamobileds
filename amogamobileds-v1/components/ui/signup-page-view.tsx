@@ -161,6 +161,11 @@ export function SignupPageView({
     const trimmedEmail = email.trim();
     const cleanName = displayName.trim();
 
+    // Optimistically advance to OTP step immediately
+    setStep('otp');
+    setOtp(Array(CODE_LENGTH).fill(''));
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+
     try {
       const { error } = await client.auth.signInWithOtp({
         email: trimmedEmail,
@@ -176,11 +181,9 @@ export function SignupPageView({
 
       if (error) throw error;
 
-      setStep('otp');
-      setOtp(Array(CODE_LENGTH).fill(''));
       toast.success('Code sent!', `A 6-digit verification code was sent to ${trimmedEmail}`);
-      setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err: any) {
+      setStep('form');
       const msg = err.message || 'Failed to send OTP code. Please try again.';
       setBanner({ type: 'error', message: msg });
       toast.error('Could not send code', msg);
@@ -195,6 +198,11 @@ export function SignupPageView({
     setBanner(null);
     const formattedPhone = formatPhoneNumber(phone);
     const cleanName = displayName.trim();
+
+    // Optimistically advance to OTP step immediately
+    setStep('otp');
+    setOtp(Array(CODE_LENGTH).fill(''));
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
 
     try {
       const { error } = await client.auth.signInWithOtp({
@@ -212,11 +220,9 @@ export function SignupPageView({
 
       if (error) throw error;
 
-      setStep('otp');
-      setOtp(Array(CODE_LENGTH).fill(''));
       toast.success('SMS code sent!', `A 6-digit verification code was sent to ${formattedPhone}`);
-      setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err: any) {
+      setStep('form');
       const msg = err.message || 'Failed to send SMS OTP. Please check your number format.';
       setBanner({ type: 'error', message: msg });
       toast.error('Could not send SMS code', msg);

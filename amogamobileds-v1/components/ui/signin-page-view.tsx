@@ -150,10 +150,15 @@ export function SigninPageView({
     setBanner(null);
     setNotRegistered(false);
 
+    // Optimistically transition to OTP screen immediately so user has zero wait time
+    setStep('otp');
+    setOtp(Array(CODE_LENGTH).fill(''));
+    setTimeout(() => inputRefs.current[0]?.focus(), 100);
+
     try {
       if (authMethod === 'email') {
         const trimmedEmail = email.trim();
-        const { error } = await supabase.auth.signInWithOtp({
+        const { error } = await client.auth.signInWithOtp({
           email: trimmedEmail,
           options: {
             shouldCreateUser: false, // Prevents auto-signup; errors if user doesn't exist
@@ -176,11 +181,9 @@ export function SigninPageView({
 
         toast.success('SMS code sent!', `A 6-digit login code was sent to ${formattedPhone}`);
       }
-
-      setStep('otp');
-      setOtp(Array(CODE_LENGTH).fill(''));
-      setTimeout(() => inputRefs.current[0]?.focus(), 150);
     } catch (err: any) {
+      // Revert back to form on error so user can adjust credentials
+      setStep('form');
       const msg = (err.message || '').toLowerCase();
       if (
         msg.includes('signup') ||
