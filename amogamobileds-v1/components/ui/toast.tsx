@@ -24,7 +24,6 @@ import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -49,16 +48,11 @@ interface ToastProps extends ToastData {
 }
 
 const { width: screenWidth } = Dimensions.get('window');
-const DYNAMIC_ISLAND_HEIGHT = 37;
-const EXPANDED_HEIGHT = 85;
-const TOAST_MARGIN = 8;
-const DYNAMIC_ISLAND_WIDTH = 126;
-const EXPANDED_WIDTH = screenWidth - 32;
 
 // Reanimated spring configuration
 const SPRING_CONFIG = {
-  stiffness: 120,
-  damping: 8,
+  stiffness: 160,
+  damping: 14,
 };
 
 export function Toast({
@@ -70,7 +64,6 @@ export function Toast({
   index,
   action,
 }: ToastProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -83,72 +76,34 @@ export function Toast({
   }, []);
 
   // Reanimated shared values
-  const translateY = useSharedValue(-100);
-  const translateX = useSharedValue(0);
+  const translateX = useSharedValue(-24);
   const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.8);
-  const width = useSharedValue(DYNAMIC_ISLAND_WIDTH);
-  const height = useSharedValue(DYNAMIC_ISLAND_HEIGHT);
-  const borderRadius = useSharedValue(18.5);
-  const contentOpacity = useSharedValue(0);
-
-  // Dynamic Island colors (dark theme optimized)
-  const backgroundColor = '#1C1C1E'; // iOS Dynamic Island background
-  const mutedTextColor = '#8E8E93'; // iOS secondary text color
+  const scale = useSharedValue(0.95);
 
   useEffect(() => {
-    const hasContentToShow = Boolean(title || description || action);
-
-    if (hasContentToShow) {
-      // If there's content, start directly with expanded state
-      width.value = EXPANDED_WIDTH;
-      height.value = EXPANDED_HEIGHT;
-      borderRadius.value = 20;
-      setIsExpanded(true);
-
-      if (reduceMotion) {
-        translateY.value = 0;
-        opacity.value = 1;
-        scale.value = 1;
-        contentOpacity.value = 1;
-      } else {
-        // Animate in expanded toast
-        translateY.value = withSpring(0, SPRING_CONFIG);
-        opacity.value = withTiming(1, { duration: 300 });
-        scale.value = withSpring(1, SPRING_CONFIG);
-        // CORRECTED LINE: Use withDelay to wrap withTiming
-        contentOpacity.value = withDelay(100, withTiming(1, { duration: 300 }));
-      }
+    if (reduceMotion) {
+      translateX.value = 0;
+      opacity.value = 1;
+      scale.value = 1;
     } else {
-      // If no content, show compact Dynamic Island with icon only
-      setIsExpanded(false);
-
-      if (reduceMotion) {
-        translateY.value = 0;
-        opacity.value = 1;
-        scale.value = 1;
-      } else {
-        // Animate in compact toast
-        translateY.value = withSpring(0, SPRING_CONFIG);
-        opacity.value = withTiming(1, { duration: 200 });
-        scale.value = withSpring(1, SPRING_CONFIG);
-      }
+      translateX.value = withSpring(0, SPRING_CONFIG);
+      opacity.value = withTiming(1, { duration: 220 });
+      scale.value = withSpring(1, SPRING_CONFIG);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduceMotion]); // Re-run if the reduced-motion setting resolves after mount
+  }, [reduceMotion]);
 
   const getVariantColor = () => {
     switch (variant) {
       case 'success':
-        return '#30D158'; // iOS green
+        return '#10b981'; // Green
       case 'error':
-        return '#FF453A'; // iOS red
+        return '#ef4444'; // Red
       case 'warning':
-        return '#FF9F0A'; // iOS orange
+        return '#f59e0b'; // Amber
       case 'info':
-        return '#007AFF'; // iOS blue
+        return '#38bdf8'; // Sky blue
       default:
-        return '#8E8E93'; // iOS gray
+        return '#94a3b8'; // Slate
     }
   };
 
@@ -175,25 +130,22 @@ export function Toast({
       return;
     }
 
-    // This function will be called from the UI thread
     const onDismissAction = () => {
       'worklet';
       runOnJS(onDismiss)(id);
     };
 
-    translateY.value = withSpring(-100, SPRING_CONFIG);
-    opacity.value = withTiming(0, { duration: 250 }, (finished) => {
+    translateX.value = withTiming(-80, { duration: 200 });
+    opacity.value = withTiming(0, { duration: 200 }, (finished) => {
       if (finished) {
         onDismissAction();
       }
     });
-    scale.value = withSpring(0.8, SPRING_CONFIG);
+    scale.value = withSpring(0.9, SPRING_CONFIG);
   }, [id, onDismiss, reduceMotion]);
 
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
-      // Reduced motion: swipe-to-dismiss still works (below), it just
-      // doesn't visually track the finger.
       if (reduceMotion) return;
       translateX.value = event.translationX;
     })
@@ -201,75 +153,50 @@ export function Toast({
       const { translationX, velocityX } = event;
 
       if (
-        Math.abs(translationX) > screenWidth * 0.25 ||
-        Math.abs(velocityX) > 800
+        Math.abs(translationX) > 80 ||
+        Math.abs(velocityX) > 600
       ) {
         if (reduceMotion) {
           runOnJS(onDismiss)(id);
           return;
         }
 
-        // Dismiss action to be called from the UI thread
         const onDismissAction = () => {
           'worklet';
           runOnJS(onDismiss)(id);
         };
 
-        // Animate out horizontally
         translateX.value = withTiming(
           translationX > 0 ? screenWidth : -screenWidth,
-          { duration: 250 }
+          { duration: 200 }
         );
-        opacity.value = withTiming(0, { duration: 250 }, (finished) => {
+        opacity.value = withTiming(0, { duration: 200 }, (finished) => {
           if (finished) {
             onDismissAction();
           }
         });
       } else if (!reduceMotion) {
-        // Snap back with spring animation
         translateX.value = withSpring(0, SPRING_CONFIG);
       }
     });
 
-  const getTopPosition = () => {
-    const statusBarHeight = Platform.OS === 'ios' ? 59 : 20;
-    return statusBarHeight + index * (EXPANDED_HEIGHT + TOAST_MARGIN);
-  };
-
-  // Animated styles
   const animatedContainerStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [
-      { translateY: translateY.value },
       { translateX: translateX.value },
       { scale: scale.value },
     ],
   }));
 
-  const animatedIslandStyle = useAnimatedStyle(() => ({
-    width: width.value,
-    height: height.value,
-    borderRadius: borderRadius.value,
-    backgroundColor,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  }));
-
-  const animatedContentStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-  }));
+  // Docked at bottom-left corner with stack spacing
+  const bottomOffset = (Platform.OS === 'web' ? 24 : 32) + index * 58;
+  const leftOffset = Platform.OS === 'web' ? 20 : 16;
 
   const toastStyle: ViewStyle = {
     position: 'absolute',
-    top: getTopPosition(),
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
-    zIndex: 1000 + index,
+    bottom: bottomOffset,
+    left: leftOffset,
+    zIndex: 999999 + index,
   };
 
   return (
@@ -277,105 +204,120 @@ export function Toast({
       <Animated.View
         style={[toastStyle, animatedContainerStyle]}
         accessible
-        accessibilityRole='alert'
-        accessibilityLiveRegion='polite'
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
         accessibilityLabel={[title, description].filter(Boolean).join('. ')}
       >
-        <Animated.View style={animatedIslandStyle}>
-          {/* Compact state - just icon or indicator */}
-          {!isExpanded && (
-            <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: '#18181b',
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: 'rgba(255, 255, 255, 0.12)',
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            maxWidth: Math.min(screenWidth - 32, 330),
+            minWidth: 200,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.35,
+            shadowRadius: 10,
+            elevation: 8,
+          }}
+        >
+          {/* Variant Icon on Left */}
+          {getIcon() && (
+            <View
+              style={{
+                marginRight: 10,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               {getIcon()}
             </View>
           )}
 
-          {/* Expanded state - full content */}
-          {isExpanded && (
-            <Animated.View
-              style={[
-                {
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  paddingHorizontal: 16,
-                  paddingVertical: 12,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                },
-                animatedContentStyle,
-              ]}
-            >
-              {getIcon() && (
-                <View style={{ marginRight: 12 }}>{getIcon()}</View>
-              )}
-
-              <View style={{ flex: 1, minWidth: 0 }}>
-                {title && (
-                  <Text
-                    variant='subtitle'
-                    style={{
-                      color: '#FFFFFF',
-                      fontSize: 15,
-                      fontWeight: '600',
-                      marginBottom: description ? 2 : 0,
-                    }}
-                    numberOfLines={1}
-                    ellipsizeMode='tail'
-                  >
-                    {title}
-                  </Text>
-                )}
-                {description && (
-                  <Text
-                    variant='caption'
-                    style={{
-                      color: mutedTextColor,
-                      fontSize: 13,
-                      fontWeight: '400',
-                    }}
-                    numberOfLines={2}
-                    ellipsizeMode='tail'
-                  >
-                    {description}
-                  </Text>
-                )}
-              </View>
-
-              {action && (
-                <TouchableOpacity
-                  onPress={action.onPress}
-                  style={{
-                    marginLeft: 12,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    backgroundColor: getVariantColor(),
-                    borderRadius: 12,
-                  }}
-                >
-                  <Text
-                    variant='caption'
-                    style={{
-                      color: '#FFFFFF',
-                      fontSize: 12,
-                      fontWeight: '600',
-                    }}
-                  >
-                    {action.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                onPress={dismiss}
-                style={{ marginLeft: 8, padding: 4, borderRadius: 8 }}
+          {/* Title & Description in Middle */}
+          <View style={{ flex: 1, minWidth: 0, justifyContent: 'center' }}>
+            {title && (
+              <Text
+                variant="subtitle"
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 13,
+                  fontWeight: '600',
+                  lineHeight: 17,
+                }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
-                <X size={14} color={mutedTextColor} />
-              </TouchableOpacity>
-            </Animated.View>
+                {title}
+              </Text>
+            )}
+            {description && (
+              <Text
+                variant="caption"
+                style={{
+                  color: '#A1A1AA',
+                  fontSize: 11.5,
+                  fontWeight: '400',
+                  lineHeight: 15,
+                  marginTop: title ? 2 : 0,
+                }}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {description}
+              </Text>
+            )}
+          </View>
+
+          {/* Optional Action Button */}
+          {action && (
+            <TouchableOpacity
+              onPress={action.onPress}
+              style={{
+                marginLeft: 10,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                backgroundColor: getVariantColor(),
+                borderRadius: 8,
+              }}
+            >
+              <Text
+                variant="caption"
+                style={{
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: '600',
+                }}
+              >
+                {action.label}
+              </Text>
+            </TouchableOpacity>
           )}
-        </Animated.View>
+
+          {/* Dedicated Cross (X) Close Button on Right */}
+          <TouchableOpacity
+            onPress={dismiss}
+            style={{
+              marginLeft: 8,
+              padding: 4,
+              borderRadius: 6,
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Close toast notification"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <X size={13} color="#D4D4D8" />
+          </TouchableOpacity>
+        </View>
       </Animated.View>
     </GestureDetector>
   );
@@ -403,6 +345,14 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  const dismissAll = useCallback(() => {
+    setToasts([]);
+  }, []);
+
   const addToast = useCallback(
     (toastData: Omit<ToastData, 'id'>) => {
       const id = generateId();
@@ -417,23 +367,14 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
         return updated.slice(0, maxToasts);
       });
 
-      // Auto dismiss after duration
       if (newToast.duration && newToast.duration > 0) {
         setTimeout(() => {
           dismissToast(id);
         }, newToast.duration);
       }
     },
-    [maxToasts]
+    [maxToasts, dismissToast]
   );
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id));
-  }, []);
-
-  const dismissAll = useCallback(() => {
-    setToasts([]);
-  }, []);
 
   const createVariantToast = useCallback(
     (variant: ToastVariant, title: string, description?: string) => {
@@ -462,10 +403,11 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
 
   const containerStyle: ViewStyle = {
     position: 'absolute',
-    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    top: 0,
+    zIndex: 999999,
     pointerEvents: 'box-none',
   };
 
@@ -473,7 +415,7 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
     <ToastContext.Provider value={contextValue}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         {children}
-        <View style={containerStyle} pointerEvents='box-none'>
+        <View style={containerStyle} pointerEvents="box-none">
           {toasts.map((toast, index) => (
             <Toast
               key={toast.id}
@@ -488,7 +430,6 @@ export function ToastProvider({ children, maxToasts = 3 }: ToastProviderProps) {
   );
 }
 
-// Hook to use toast
 export function useToast() {
   const context = useContext(ToastContext);
 
