@@ -45,6 +45,7 @@
     "providers",
     "theme",
     "hooks",
+    "lib",
     "index.ts",
     "README.md"
   ],
