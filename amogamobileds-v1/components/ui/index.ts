@@ -61,6 +61,7 @@ export * from './full-page-map';
 export * from './full-page-calendar';
 export * from './calendar-app-view';
 export * from './email-app-view';
+export * from './files-app-view';
 export * from './ai-chat';
 export * from './video';
 export * from './view';

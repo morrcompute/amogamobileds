@@ -301,22 +301,47 @@ function base64ToArrayBuffer(base64: string): ArrayBuffer {
 
 /**
  * Upload attachment to Supabase Storage 'chat-files' bucket.
- *
- * Upload strategy (in order):
- *   1. base64 → ArrayBuffer  (works on all platforms when FileSystem read succeeds)
- *   2. fetch(fileUri) → Blob  (works on web & native when the URI is readable)
- *   3. data: URI fallback     (always viewable, even without Supabase)
+ * Organized into user-specific folder structure: Chat/<user_email>/<Category>/<filename>
  */
 export async function uploadChatAttachment(
   fileUri: string,
   fileName: string,
   mimeType: string,
-  base64Data?: string
+  base64Data?: string,
+  targetFolder?: string,
+  userEmail?: string
 ): Promise<string | null> {
   try {
     const ext = fileName.split('.').pop() || 'dat';
     const cleanName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-    const filePath = `attachments/${cleanName}`;
+    
+    // Auto-detect folder / category
+    let category = 'Others';
+    const lowerExt = ext.toLowerCase();
+    const lowerMime = (mimeType || '').toLowerCase();
+
+    if (['png', 'jpg', 'jpeg', 'svg', 'webp', 'gif', 'bmp'].includes(lowerExt) || lowerMime.startsWith('image/')) {
+      category = 'Images';
+    } else if (lowerExt === 'pdf' || lowerMime.includes('pdf')) {
+      category = 'Pdf';
+    } else if (['doc', 'docx', 'txt', 'rtf', 'odt'].includes(lowerExt) || lowerMime.includes('word') || lowerMime.includes('text')) {
+      category = 'Doc';
+    } else if (['xls', 'xlsx', 'csv'].includes(lowerExt) || lowerMime.includes('sheet') || lowerMime.includes('excel')) {
+      category = 'Xls';
+    } else if (['mp4', 'mov', 'avi', 'mkv', 'webm', '3gp'].includes(lowerExt) || lowerMime.startsWith('video/')) {
+      category = 'Videos';
+    } else if (['mp3', 'm4a', 'wav', 'aac', 'ogg', 'flac'].includes(lowerExt) || lowerMime.startsWith('audio/')) {
+      category = 'Audio';
+    }
+
+    let filePath = '';
+    if (targetFolder) {
+      filePath = `${targetFolder}/${cleanName}`;
+    } else if (userEmail) {
+      filePath = `Chat/${userEmail}/${category}/${cleanName}`;
+    } else {
+      filePath = `Chat/general/${category}/${cleanName}`;
+    }
 
     // ── Tier 0: Native FileSystem streaming (Android & iOS) ──────────────────
     // Streams content:// and file:// directly into Supabase Storage endpoint
