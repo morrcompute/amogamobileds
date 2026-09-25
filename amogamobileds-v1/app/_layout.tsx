@@ -63,6 +63,8 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name='index' options={{ headerShown: false }} />
+
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name='(auth)' options={{ headerShown: false }} />
       </Stack.Protected>
