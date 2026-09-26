@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amoga Mobile Design System & App - Archify Architecture Diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0d14;
+      --bg-surface: #111622;
+      --bg-elevated: #182032;
+      --bg-card: rgba(24, 32, 50, 0.85);
+      --border-subtle: #232d42;
+      --border-strong: #384869;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --accent-primary: #6366f1;
+      --accent-primary-glow: rgba(99, 102, 241, 0.25);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+      --accent-rose: #f43f5e;
+      
+      --boundary-client: rgba(59, 130, 246, 0.15);
+      --boundary-client-border: rgba(96, 165, 250, 0.6);
+      --boundary-api: rgba(168, 85, 247, 0.15);
+      --boundary-api-border: rgba(192, 132, 252, 0.6);
+      --boundary-db: rgba(16, 185, 129, 0.15);
+      --boundary-db-border: rgba(52, 211, 153, 0.6);
+      --boundary-external: rgba(245, 158, 11, 0.15);
+      --boundary-external-border: rgba(251, 191, 36, 0.6);
+
+      --flow-active-color: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    header {
+      background: rgba(17, 22, 34, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px var(--accent-primary-glow);
+    }
+
+    .brand-logo svg {
+      width: 20px;
+      height: 20px;
+      color: white;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.18);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-family: 'Fira Code', monospace;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .action-btn {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .action-btn:hover {
+      background: #232d42;
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .action-btn.active {
+      background: var(--accent-primary);
+      border-color: #4f46e5;
+      color: #fff;
+      box-shadow: 0 2px 10px var(--accent-primary-glow);
+    }
+
+    /* Main Container */
+    .main-workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 65px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Sidebar Controls & Flow Controller */
+    .control-sidebar {
+      width: 360px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      z-index: 20;
+    }
+
+    .sidebar-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .sidebar-heading {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Trust Boundaries Legend */
+    .boundary-legend-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .boundary-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .boundary-pill:hover {
+      border-color: var(--border-strong);
+      background: #1f2a40;
+    }
+
+    .boundary-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      border: 2px dashed;
+    }
+
+    /* Flow Step Controller */
+    .flow-controller {
+      background: var(--bg-elevated);
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      padding: 14px;
+      margin-top: 8px;
+    }
+
+    .flow-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .flow-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .flow-step-counter {
+      font-size: 11.5px;
+      font-family: 'Fira Code', monospace;
+      color: var(--text-muted);
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .flow-desc {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      min-height: 52px;
+    }
+
+    .flow-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-step {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-step:hover {
+      background: #27344d;
+      border-color: var(--border-strong);
+    }
+
+    .btn-step.primary {
+      background: var(--accent-primary);
+      border-color: #4f46e5;
+      color: white;
+    }
+
+    .btn-step.primary:hover {
+      background: #4338ca;
+    }
+
+    /* Architecture Canvas Area */
+    .diagram-viewport {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, rgba(30, 41, 65, 0.3) 0%, rgba(10, 13, 20, 0.95) 100%);
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    /* SVG Canvas styling */
+    .arch-svg {
+      width: 1200px;
+      height: 860px;
+      user-select: none;
+      filter: drop-shadow(0 12px 36px rgba(0, 0, 0, 0.5));
+    }
+
+    /* Boundary Zones in SVG */
+    .svg-boundary {
+      fill-opacity: 0.08;
+      stroke-dasharray: 6 5;
+      stroke-width: 1.5;
+      rx: 16;
+      transition: all 0.3s ease;
+    }
+
+    .svg-boundary:hover {
+      fill-opacity: 0.14;
+    }
+
+    .svg-boundary-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Component Node Card in SVG */
+    .node-group {
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .node-group:hover {
+      filter: drop-shadow(0 6px 18px rgba(99, 102, 241, 0.4));
+    }
+
+    .node-rect {
+      fill: #141c2c;
+      stroke: #2a3752;
+      stroke-width: 1.5;
+      rx: 12;
+      transition: all 0.25s ease;
+    }
+
+    .node-group:hover .node-rect {
+      stroke: #818cf8;
+      fill: #1a243a;
+    }
+
+    .node-group.selected .node-rect {
+      stroke: #38bdf8;
+      stroke-width: 2.5;
+      fill: #1a2b48;
+      filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.5));
+    }
+
+    .node-group.flow-active .node-rect {
+      stroke: var(--flow-active-color);
+      stroke-width: 2.5;
+      fill: rgba(56, 189, 248, 0.15);
+      animation: pulseNode 1.5s infinite alternate;
+    }
+
+    @keyframes pulseNode {
+      0% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4)); }
+      100% { filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.8)); }
+    }
+
+    .node-icon-bg {
+      fill: rgba(255, 255, 255, 0.06);
+      rx: 8;
+    }
+
+    .node-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      fill: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .node-subtitle {
+      font-size: 11px;
+      font-weight: 500;
+      fill: #94a3b8;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .node-badge {
+      font-size: 9.5px;
+      font-weight: 600;
+      font-family: 'Fira Code', monospace;
+    }
+
+    /* Connection lines */
+    .connection-line {
+      stroke: #334155;
+      stroke-width: 2;
+      fill: none;
+      transition: stroke 0.3s ease, stroke-width 0.3s ease;
+    }
+
+    .connection-line.flow-highlight {
+      stroke: #38bdf8;
+      stroke-width: 3.5;
+      stroke-dasharray: 8 6;
+      animation: dashFlow 1.2s linear infinite;
+    }
+
+    @keyframes dashFlow {
+      to {
+        stroke-dashoffset: -28;
+      }
+    }
+
+    .flow-particle {
+      fill: #38bdf8;
+      filter: drop-shadow(0 0 6px #38bdf8);
+    }
+
+    /* Inspector Slide-over Panel */
+    .inspector-panel {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 400px;
+      background: rgba(17, 22, 34, 0.96);
+      backdrop-filter: blur(16px);
+      border-left: 1px solid var(--border-subtle);
+      padding: 24px;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .inspector-panel.open {
+      transform: translateX(0);
+    }
+
+    .inspector-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .inspector-title-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .inspector-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .inspector-category {
+      font-size: 11.5px;
+      font-family: 'Fira Code', monospace;
+      color: var(--accent-cyan);
+    }
+
+    .close-inspector-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-inspector-btn:hover {
+      background: var(--bg-elevated);
+      color: #fff;
+    }
+
+    .inspector-section {
+      margin-bottom: 20px;
+    }
+
+    .inspector-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .inspector-text {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tech-tag {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-family: 'Fira Code', monospace;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .file-ref {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: 'Fira Code', monospace;
+      font-size: 11.5px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+
+    /* Toast notification */
+    .toast-tip {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-strong);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">
+          Amoga Mobile Design System & App
+          <span class="brand-badge">Archify v2.4</span>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-dim);">High-Level Runtime Architecture & Trust Boundary Map</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="action-btn" id="btn-toggle-boundaries" onclick="toggleBoundaries()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+        Toggle Trust Boundaries
+      </button>
+      <button class="action-btn" onclick="resetView()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+        Reset Selection
+      </button>
+      <button class="action-btn active" onclick="playFullFlow()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Simulate AI & Sync Flow
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Container -->
+  <div class="main-workspace">
+    <!-- Left Controller Sidebar -->
+    <aside class="control-sidebar">
+      <!-- Trust Boundaries Legend -->
+      <div class="sidebar-section">
+        <div class="sidebar-heading">
+          <span>Trust Boundaries (5 Zones)</span>
+          <span style="font-family: 'Fira Code', monospace; font-size: 10px; color: var(--text-muted);">ISOLATION</span>
+        </div>
+        <div class="boundary-legend-list">
+          <div class="boundary-pill" onclick="highlightBoundary('client-boundary')">
+            <div class="boundary-indicator" style="border-color: #60a5fa; background: rgba(59, 130, 246, 0.2);"></div>
+            <div>
+              <div style="color: #93c5fd; font-weight: 600;">Zone 1: Client Sandbox</div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">Device runtime & encrypted secure store</div>
+            </div>
+          </div>
+          <div class="boundary-pill" onclick="highlightBoundary('transport-boundary')">
+            <div class="boundary-indicator" style="border-color: #38bdf8; background: rgba(56, 189, 248, 0.2);"></div>
+            <div>
+              <div style="color: #7dd3fc; font-weight: 600;">Zone 2: Transport Layer</div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">HTTPS/WSS + PKCE Bearer JWT</div>
+            </div>
+          </div>
+          <div class="boundary-pill" onclick="highlightBoundary('api-boundary')">
+            <div class="boundary-indicator" style="border-color: #c084fc; background: rgba(168, 85, 247, 0.2);"></div>
+            <div>
+              <div style="color: #d8b4fe; font-weight: 600;">Zone 3: Edge & Serverless API</div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">Expo Router API & Multi-LLM gateway</div>
+            </div>
+          </div>
+          <div class="boundary-pill" onclick="highlightBoundary('db-boundary')">
+            <div class="boundary-indicator" style="border-color: #34d399; background: rgba(16, 185, 129, 0.2);"></div>
+            <div>
+              <div style="color: #6ee7b7; font-weight: 600;">Zone 4: Supabase RLS & Storage</div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">PostgreSQL with isolated user copies</div>
+            </div>
+          </div>
+          <div class="boundary-pill" onclick="highlightBoundary('ext-boundary')">
+            <div class="boundary-indicator" style="border-color: #fbbf24; background: rgba(245, 158, 11, 0.2);"></div>
+            <div>
+              <div style="color: #fde68a; font-weight: 600;">Zone 5: Third-Party AI & Search</div>
+              <div style="font-size: 10.5px; color: var(--text-dim);">OpenRouter, Gemini, OpenAI, Tavily</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Primary Application Flow Interactive Step Player -->
+      <div class="sidebar-section" style="flex: 1;">
+        <div class="sidebar-heading">
+          <span>Primary Application Flow</span>
+          <span style="font-family: 'Fira Code', monospace; font-size: 10px; color: #38bdf8;">END-TO-END</span>
+        </div>
+        
+        <div class="flow-controller">
+          <div class="flow-meta">
+            <span class="flow-title" id="flow-title">1. Local Chat & Optimistic State</span>
+            <span class="flow-step-counter" id="flow-counter">Step 1 of 6</span>
+          </div>
+          <p class="flow-desc" id="flow-desc">
+            User submits a prompt or audio/document in ChatArea. ChatService stores local optimistic copies in SQLite (<code style="color:#7dd3fc">local_chat_messages</code>) for immediate UI rendering.
+          </p>
+          <div class="flow-buttons">
+            <button class="btn-step" onclick="prevStep()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              Prev
+            </button>
+            <button class="btn-step primary" onclick="nextStep()">
+              Next
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            <button class="btn-step" onclick="toggleAutoPlay()" id="btn-autoplay">
+              Auto
+            </button>
+          </div>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <div class="sidebar-heading">11 Core Runtime Components</div>
+          <div id="components-quick-list" style="display: flex; flex-direction: column; gap: 5px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Diagram Viewport (SVG Archify Canvas) -->
+    <main class="diagram-viewport" id="viewport">
+      <svg class="arch-svg" id="arch-svg" viewBox="0 0 1200 860" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- Gradients -->
+          <linearGradient id="grad-client" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#1d4ed8" stop-opacity="0.04"/>
+          </linearGradient>
+          <linearGradient id="grad-api" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a855f7" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#6b21a8" stop-opacity="0.04"/>
+          </linearGradient>
+          <linearGradient id="grad-db" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#047857" stop-opacity="0.04"/>
+          </linearGradient>
+          <linearGradient id="grad-ext" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.12"/>
+            <stop offset="100%" stop-color="#b45309" stop-opacity="0.04"/>
+          </linearGradient>
+
+          <!-- Marker Arrows -->
+          <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+          </marker>
+          <marker id="arrow-active" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8"/>
+          </marker>
+        </defs>
+
+        <!-- ==================== TRUST BOUNDARY ZONES ==================== -->
+        <!-- Zone 1: Client Sandbox Boundary -->
+        <rect id="zone-client" class="svg-boundary" x="20" y="20" width="370" height="810" fill="url(#grad-client)" stroke="#60a5fa" />
+        <text class="svg-boundary-label" x="40" y="48" fill="#93c5fd">Zone 1: Client Sandbox (React Native / Web)</text>
+
+        <!-- Zone 2: Edge Serverless API Boundary -->
+        <rect id="zone-api" class="svg-boundary" x="420" y="20" width="360" height="400" fill="url(#grad-api)" stroke="#c084fc" />
+        <text class="svg-boundary-label" x="440" y="48" fill="#d8b4fe">Zone 2: Serverless & AI Gateway (Expo API)</text>
+
+        <!-- Zone 3: Database & Cloud Infrastructure Boundary -->
+        <rect id="zone-db" class="svg-boundary" x="420" y="445" width="360" height="385" fill="url(#grad-db)" stroke="#34d399" />
+        <text class="svg-boundary-label" x="440" y="473" fill="#6ee7b7">Zone 3: Supabase Cloud & Persistence (RLS)</text>
+
+        <!-- Zone 4: External Services & AI Providers Boundary -->
+        <rect id="zone-ext" class="svg-boundary" x="810" y="20" width="370" height="810" fill="url(#grad-ext)" stroke="#fbbf24" />
+        <text class="svg-boundary-label" x="830" y="48" fill="#fde68a">Zone 4: External AI & Web Services</text>
+
+
+        <!-- ==================== CONNECTION FLOW LINES ==================== -->
+        <!-- Line 1: UI -> Auth Provider / LargeSecureStore -->
+        <path id="conn-1" class="connection-line" d="M 195 200 L 195 240" marker-end="url(#arrow)" />
+
+        <!-- Line 2: UI -> SQLite Local DB -->
+        <path id="conn-2" class="connection-line" d="M 195 350 L 195 390" marker-end="url(#arrow)" />
+
+        <!-- Line 3: UI -> Chat & AI Client Orchestrator -->
+        <path id="conn-3" class="connection-line" d="M 195 500 L 195 540" marker-end="url(#arrow)" />
+
+        <!-- Line 4: Client Orchestrator -> Expo Router API Route (/api/chat) -->
+        <path id="conn-4" class="connection-line" d="M 350 600 Q 400 600, 420 300 L 460 300" marker-end="url(#arrow)" />
+
+        <!-- Line 5: /api/chat -> Multi-LLM Gateway -->
+        <path id="conn-5" class="connection-line" d="M 740 300 L 850 160" marker-end="url(#arrow)" />
+
+        <!-- Line 6: /api/chat -> Tavily Web Search Engine -->
+        <path id="conn-6" class="connection-line" d="M 740 320 L 850 350" marker-end="url(#arrow)" />
+
+        <!-- Line 7: Client Auth -> Supabase Auth & JWT -->
+        <path id="conn-7" class="connection-line" d="M 350 285 Q 400 285, 460 550" marker-end="url(#arrow)" />
+
+        <!-- Line 8: Client Chat Orchestrator -> Supabase PostgreSQL (RLS) -->
+        <path id="conn-8" class="connection-line" d="M 350 630 L 460 630" marker-end="url(#arrow)" />
+
+        <!-- Line 9: Supabase DB -> Supabase Realtime WebSocket Publisher -->
+        <path id="conn-9" class="connection-line" d="M 600 700 L 600 730" marker-end="url(#arrow)" />
+
+        <!-- Line 10: Realtime WS -> Client UI / Chat Hook (Reconciliation) -->
+        <path id="conn-10" class="connection-line" d="M 460 765 Q 260 765, 260 680 L 260 660" marker-end="url(#arrow)" />
+
+        <!-- Line 11: Document Scanner / Media -> Supabase Storage (chat-files) -->
+        <path id="conn-11" class="connection-line" d="M 995 590 L 995 530" marker-end="url(#arrow)" />
+
+
+        <!-- ==================== ARCHITECTURE NODES ==================== -->
+
+        <!-- Node 1: Cross-Platform UI Client -->
+        <g class="node-group" id="node-ui" transform="translate(45, 80)" onclick="selectNode('ui')">
+          <rect class="node-rect" width="320" height="120" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(99, 102, 241, 0.2)" />
+          <!-- Phone/Monitor Icon -->
+          <path d="M 25 24 h 16 a 2 2 0 0 1 2 2 v 14 a 2 2 0 0 1 -2 2 h -16 a 2 2 0 0 1 -2 -2 v -14 a 2 2 0 0 1 2 -2 z M 33 39 h 0.01" stroke="#818cf8" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">1. Cross-Platform UI Client</text>
+          <text class="node-subtitle" x="62" y="48">Expo React Native + Web (2-Pane Workspace)</text>
+          <line x1="14" y1="62" x2="306" y2="62" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="80" fill="#94a3b8" font-size="10.5">app/(tabs), DESIGN.md 2-Pane Master Layout</text>
+          <text x="16" y="98" fill="#64748b" font-size="10">Generative UI Cards, Audio Recorder, Dark/Light Theme</text>
+          <rect x="238" y="14" width="68" height="18" rx="4" fill="rgba(99,102,241,0.15)" stroke="#6366f1" />
+          <text class="node-badge" x="245" y="27" fill="#a5b4fc">PRESENTATION</text>
+        </g>
+
+        <!-- Node 2: LargeSecureStore & Auth Provider -->
+        <g class="node-group" id="node-auth" transform="translate(45, 240)" onclick="selectNode('auth')">
+          <rect class="node-rect" width="320" height="110" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(56, 189, 248, 0.2)" />
+          <!-- Lock Icon -->
+          <rect x="25" y="27" width="16" height="12" rx="2" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <path d="M 29 27 v -4 a 4 4 0 0 1 8 0 v 4" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">2. LargeSecureStore & Auth Provider</text>
+          <text class="node-subtitle" x="62" y="48">PKCE OAuth & Chunked AES Encryption</text>
+          <line x1="14" y1="60" x2="306" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">providers/auth-provider.tsx, large-secure-store.ts</text>
+          <text x="16" y="94" fill="#64748b" font-size="10">Bypasses 2KB Keychain limit, auto-refreshes on AppState</text>
+          <rect x="256" y="14" width="50" height="18" rx="4" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" />
+          <text class="node-badge" x="263" y="27" fill="#7dd3fc">SECURITY</text>
+        </g>
+
+        <!-- Node 3: Local SQLite Offline Database -->
+        <g class="node-group" id="node-sqlite" transform="translate(45, 390)" onclick="selectNode('sqlite')">
+          <rect class="node-rect" width="320" height="110" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(16, 185, 129, 0.2)" />
+          <!-- Database Icon -->
+          <ellipse cx="33" cy="24" rx="9" ry="4" stroke="#10b981" stroke-width="2" fill="none" />
+          <path d="M 24 24 v 12 c 0 2.2 4 4 9 4 s 9 -1.8 9 -4 v -12" stroke="#10b981" stroke-width="2" fill="none" />
+          <path d="M 24 30 c 0 2.2 4 4 9 4 s 9 -1.8 9 -4" stroke="#10b981" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">3. Local SQLite Offline Engine</text>
+          <text class="node-subtitle" x="62" y="48">amoga_local.db & Web Fallback</text>
+          <line x1="14" y1="60" x2="306" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">lib/local-db/sqlite-db.ts (11 tables)</text>
+          <text x="16" y="94" fill="#64748b" font-size="10">local_chat_messages, local_emails, local_files, contacts</text>
+          <rect x="256" y="14" width="50" height="18" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" />
+          <text class="node-badge" x="263" y="27" fill="#6ee7b7">STORAGE</text>
+        </g>
+
+        <!-- Node 4: Chat & AI Client Orchestrator -->
+        <g class="node-group" id="node-chat-svc" transform="translate(45, 540)" onclick="selectNode('chat-svc')">
+          <rect class="node-rect" width="320" height="120" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(168, 85, 247, 0.2)" />
+          <!-- Message Bubble Icon -->
+          <path d="M 24 24 h 18 a 3 3 0 0 1 3 3 v 10 a 3 3 0 0 1 -3 3 h -12 l -6 5 v -18 a 3 3 0 0 1 3 -3 z" stroke="#c084fc" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">4. Chat & AI Client Orchestrator</text>
+          <text class="node-subtitle" x="62" y="48">Optimistic Updates, Message Fanout & CDC</text>
+          <line x1="14" y1="60" x2="306" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">lib/chat-service.ts, lib/ai-service.ts</text>
+          <text x="16" y="96" fill="#64748b" font-size="10">Copy lineage (sender_message_id), audio stream parse</text>
+          <rect x="250" y="14" width="56" height="18" rx="4" fill="rgba(168,85,247,0.15)" stroke="#a855f7" />
+          <text class="node-badge" x="256" y="27" fill="#d8b4fe">SERVICE</text>
+        </g>
+
+        <!-- Node 5: Expo Router API Route (/api/chat) -->
+        <g class="node-group" id="node-api-route" transform="translate(450, 240)" onclick="selectNode('api-route')">
+          <rect class="node-rect" width="300" height="140" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(168, 85, 247, 0.2)" />
+          <!-- Server/Route Icon -->
+          <rect x="23" y="24" width="20" height="8" rx="2" stroke="#c084fc" stroke-width="2" fill="none" />
+          <rect x="23" y="36" width="20" height="8" rx="2" stroke="#c084fc" stroke-width="2" fill="none" />
+          <circle cx="28" cy="28" r="1" fill="#c084fc" />
+          <circle cx="28" cy="40" r="1" fill="#c084fc" />
+          <text class="node-title" x="62" y="32">5. Expo Router AI API Route</text>
+          <text class="node-subtitle" x="62" y="48">app/api/chat+api.ts (Vercel AI SDK)</text>
+          <line x1="14" y1="62" x2="286" y2="62" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="80" fill="#94a3b8" font-size="10.5">Multi-LLM Dispatcher & Tools Runtime</text>
+          <text x="16" y="98" fill="#64748b" font-size="10">Tools: render_ui_card (Generative UI)</text>
+          <text x="16" y="114" fill="#64748b" font-size="10">Tools: web_search (Tavily real-time news search)</text>
+          <rect x="230" y="14" width="56" height="18" rx="4" fill="rgba(168,85,247,0.15)" stroke="#a855f7" />
+          <text class="node-badge" x="237" y="27" fill="#d8b4fe">GATEWAY</text>
+        </g>
+
+        <!-- Node 6: Multi-LLM External Gateway -->
+        <g class="node-group" id="node-llm" transform="translate(840, 80)" onclick="selectNode('llm')">
+          <rect class="node-rect" width="310" height="135" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(245, 158, 11, 0.2)" />
+          <!-- Brain / Sparkle Icon -->
+          <circle cx="33" cy="33" r="8" stroke="#fbbf24" stroke-width="2" fill="none" />
+          <path d="M 33 21 v 4 M 33 41 v 4 M 21 33 h 4 M 41 33 h 4" stroke="#fbbf24" stroke-width="2" />
+          <text class="node-title" x="62" y="32">6. Multi-LLM Provider Engine</text>
+          <text class="node-subtitle" x="62" y="48">OpenRouter, Gemini, OpenAI, Claude, Groq</text>
+          <line x1="14" y1="62" x2="296" y2="62" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="80" fill="#94a3b8" font-size="10.5">Google Gemini 2.5 Flash / 1.5 Pro</text>
+          <text x="16" y="98" fill="#64748b" font-size="10">OpenAI GPT-4o-mini, Claude 3.5, DeepSeek, Llama 3.3</text>
+          <text x="16" y="114" fill="#f59e0b" font-size="10">Direct streaming via streamText()</text>
+          <rect x="234" y="14" width="62" height="18" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" />
+          <text class="node-badge" x="240" y="27" fill="#fde68a">AI CLOUD</text>
+        </g>
+
+        <!-- Node 7: Tavily Web Search API -->
+        <g class="node-group" id="node-tavily" transform="translate(840, 260)" onclick="selectNode('tavily')">
+          <rect class="node-rect" width="310" height="100" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(56, 189, 248, 0.2)" />
+          <!-- Search Globe Icon -->
+          <circle cx="33" cy="33" r="8" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <path d="M 39 39 l 4 4" stroke="#38bdf8" stroke-width="2" />
+          <text class="node-title" x="62" y="32">7. Tavily Web Search API</text>
+          <text class="node-subtitle" x="62" y="48">Real-time Search, News & Scraped Images</text>
+          <line x1="14" y1="60" x2="296" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">https://api.tavily.com/search</text>
+          <text x="16" y="92" fill="#64748b" font-size="10">Returns structured sources, favicons, published dates</text>
+          <rect x="234" y="14" width="62" height="18" rx="4" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" />
+          <text class="node-badge" x="242" y="27" fill="#7dd3fc">EXTERNAL</text>
+        </g>
+
+        <!-- Node 8: Supabase Auth & JWT Service -->
+        <g class="node-group" id="node-sb-auth" transform="translate(450, 490)" onclick="selectNode('sb-auth')">
+          <rect class="node-rect" width="300" height="85" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(56, 189, 248, 0.2)" />
+          <!-- Key / User Check Icon -->
+          <circle cx="33" cy="29" r="4" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <path d="M 27 39 c 0 -3 3 -4 6 -4 s 6 1 6 4" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">8. Supabase Auth (GoTrue)</text>
+          <text class="node-subtitle" x="62" y="48">PKCE Deep Links & JWT Issuance</text>
+          <line x1="14" y1="58" x2="286" y2="58" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="74" fill="#94a3b8" font-size="10.5">Auto-links to public.profiles via Postgres triggers</text>
+          <rect x="240" y="14" width="46" height="18" rx="4" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" />
+          <text class="node-badge" x="247" y="27" fill="#7dd3fc">AUTH</text>
+        </g>
+
+        <!-- Node 9: Supabase PostgreSQL (with RLS) -->
+        <g class="node-group" id="node-sb-db" transform="translate(450, 595)" onclick="selectNode('sb-db')">
+          <rect class="node-rect" width="300" height="110" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(16, 185, 129, 0.2)" />
+          <!-- Server DB Icon -->
+          <rect x="23" y="24" width="20" height="18" rx="3" stroke="#10b981" stroke-width="2" fill="none" />
+          <line x1="23" y1="33" x2="43" y2="33" stroke="#10b981" stroke-width="2" />
+          <text class="node-title" x="62" y="32">9. Supabase PostgreSQL (RLS)</text>
+          <text class="node-subtitle" x="62" y="48">Multi-Tenant Isolated User Copies</text>
+          <line x1="14" y1="60" x2="286" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">chat_messages, conversation_members, profiles</text>
+          <text x="16" y="94" fill="#64748b" font-size="10">RLS: auth.uid() = owner_user_id (no cross-leak)</text>
+          <rect x="234" y="14" width="52" height="18" rx="4" fill="rgba(16,185,129,0.15)" stroke="#10b981" />
+          <text class="node-badge" x="240" y="27" fill="#6ee7b7">DB (RLS)</text>
+        </g>
+
+        <!-- Node 10: Supabase Realtime Engine -->
+        <g class="node-group" id="node-sb-realtime" transform="translate(450, 725)" onclick="selectNode('sb-realtime')">
+          <rect class="node-rect" width="300" height="90" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(56, 189, 248, 0.2)" />
+          <!-- Broadcast Waves Icon -->
+          <path d="M 28 38 a 7 7 0 0 1 10 0 M 24 42 a 13 13 0 0 1 18 0" stroke="#38bdf8" stroke-width="2" fill="none" />
+          <circle cx="33" cy="34" r="2" fill="#38bdf8" />
+          <text class="node-title" x="62" y="32">10. Supabase Realtime (WebSockets)</text>
+          <text class="node-subtitle" x="62" y="48">Postgres CDC Pub/Sub Broadcaster</text>
+          <line x1="14" y1="58" x2="286" y2="58" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="74" fill="#94a3b8" font-size="10.5">Broadcasts inserts/updates to conversation members</text>
+          <rect x="226" y="14" width="60" height="18" rx="4" fill="rgba(56,189,248,0.15)" stroke="#38bdf8" />
+          <text class="node-badge" x="232" y="27" fill="#7dd3fc">REALTIME</text>
+        </g>
+
+        <!-- Node 11: Supabase Storage Bucket (chat-files) & Document Scanner -->
+        <g class="node-group" id="node-storage" transform="translate(840, 595)" onclick="selectNode('storage')">
+          <rect class="node-rect" width="310" height="120" />
+          <rect class="node-icon-bg" x="14" y="14" width="38" height="38" fill="rgba(244, 63, 94, 0.2)" />
+          <!-- Folder / Document Icon -->
+          <path d="M 24 26 h 6 l 3 3 h 9 a 2 2 0 0 1 2 2 v 9 a 2 2 0 0 1 -2 2 h -18 a 2 2 0 0 1 -2 -2 v -12 a 2 2 0 0 1 2 -2 z" stroke="#f43f5e" stroke-width="2" fill="none" />
+          <text class="node-title" x="62" y="32">11. Supabase Storage & Scanner</text>
+          <text class="node-subtitle" x="62" y="48">chat-files Bucket & Scanned PDFs</text>
+          <line x1="14" y1="60" x2="296" y2="60" stroke="#2a3752" stroke-width="1" />
+          <text x="16" y="78" fill="#94a3b8" font-size="10.5">Scanned document PDFs (scanned/), OCR JSON</text>
+          <text x="16" y="96" fill="#64748b" font-size="10">Audio voice notes, voucher attachments & images</text>
+          <rect x="238" y="14" width="58" height="18" rx="4" fill="rgba(244,63,94,0.15)" stroke="#f43f5e" />
+          <text class="node-badge" x="244" y="27" fill="#fda4af">STORAGE</text>
+        </g>
+
+      </svg>
+
+      <div class="toast-tip">
+        💡 Click on any component to inspect implementation details, source files, and dependencies
+      </div>
+    </main>
+
+    <!-- Slide-Over Inspector Drawer -->
+    <div class="inspector-panel" id="inspector-panel">
+      <div class="inspector-header">
+        <div class="inspector-title-area">
+          <div class="inspector-title" id="insp-title">Component Inspector</div>
+          <div class="inspector-category" id="insp-category">LAYER & CATEGORY</div>
+        </div>
+        <button class="close-inspector-btn" onclick="closeInspector()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-label">Description & Architecture Role</div>
+        <div class="inspector-text" id="insp-desc">Select a node on the diagram to see its runtime behavior, security parameters, and data flows.</div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-label">Source Code Files</div>
+        <div id="insp-files">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-label">Major Dependencies & Libraries</div>
+        <div class="tag-container" id="insp-deps">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="inspector-section">
+        <div class="inspector-label">Trust Boundary & Security Rules</div>
+        <div class="inspector-text" id="insp-security" style="color: #94a3b8; font-size: 12px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; border: 1px solid var(--border-subtle);">
+          -
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Component Metadata Dictionary extracted from workspace source code
+    const COMPONENTS = {
+      'ui': {
+        name: '1. Cross-Platform UI Client',
+        category: 'PRESENTATION / APPLICATION LAYER',
+        desc: 'Universal Expo and React Native UI featuring 2-Pane desktop workspace (sidebar + detail canvas) and single-pane responsive mobile view according to DESIGN.md. Includes generative dynamic cards, audio voice recorder, document scanner, and dark/light color theme providers.',
+        files: [
+          'amogamobileds-v1/app/(tabs)/(home)/index.tsx',
+          'amogamobileds-v1/app/(tabs)/(home)/index.web.tsx',
+          'amogamobileds-v1/DESIGN.md',
+          'amogamobileds-v1/components/chat/chat-area.tsx'
+        ],
+        deps: ['expo', 'react-native', 'react-native-web', 'lucide-react-native', 'expo-image', 'expo-audio', 'expo-camera', 'expo-haptics'],
+        security: 'Zone 1: Client Sandbox. Runs isolated in mobile JavaScript VM or browser environment. Does not hold root secrets.'
+      },
+      'auth': {
+        name: '2. LargeSecureStore & Auth Provider',
+        category: 'AUTHENTICATION & SECURITY LAYER',
+        desc: 'Enterprise authentication provider wrapping Supabase Auth with PKCE flow. Implements LargeSecureStore with AES-256 chunking to bypass iOS 2048-byte Keychain limit. Listens to AppState changes to automatically refresh expired access tokens when resuming.',
+        files: [
+          'amogamobileds-v1/providers/auth-provider.tsx',
+          'amogamobileds-v1/lib/large-secure-store.ts',
+          'amogamobileds-v1/lib/supabase.ts'
+        ],
+        deps: ['@supabase/supabase-js', 'expo-secure-store', 'expo-crypto', 'expo-auth-session', 'aes-js'],
+        security: 'Zone 1 & Zone 2. PKCE code verification on device prevents authorization code interception on deep link redirects.'
+      },
+      'sqlite': {
+        name: '3. Local SQLite Offline Engine',
+        category: 'LOCAL STORAGE & CACHING LAYER',
+        desc: 'Offline-first database engine running on expo-sqlite (amoga_local.db) for native platforms and local storage wrapper for web. Houses 11 complete tables mirroring remote Postgres tables for offline reading, composing emails, chat caching, and contact management.',
+        files: [
+          'amogamobileds-v1/lib/local-db/sqlite-db.ts',
+          'amogamobileds-v1/lib/local-db/local-chat-service.ts',
+          'amogamobileds-v1/lib/local-db/types.ts'
+        ],
+        deps: ['expo-sqlite', '@react-native-async-storage/async-storage'],
+        security: 'Zone 1: Local Device Sandbox. Encrypted at device OS filesystem level. Provides full offline availability without network calls.'
+      },
+      'chat-svc': {
+        name: '4. Chat & AI Client Orchestrator',
+        category: 'SERVICE & DATA ORCHESTRATION LAYER',
+        desc: 'Manages message lifecycle, fan-out replication to conversation members, copy-lineage linking (sender_message_id), optimistic updates, audio recording uploads, and Postgres CDC realtime reconciliation via applyChange pure reducer.',
+        files: [
+          'amogamobileds-v1/lib/chat-service.ts',
+          'amogamobileds-v1/lib/ai-service.ts',
+          'amogamobileds-v1/lib/realtime.ts'
+        ],
+        deps: ['@supabase/supabase-js', 'ai', '@ai-sdk/react', 'zod'],
+        security: 'Zone 1 -> Zone 2. Authenticates all mutations using the user\'s Bearer JWT session token against Supabase RLS.'
+      },
+      'api-route': {
+        name: '5. Expo Router AI API Route',
+        category: 'SERVERLESS API GATEWAY',
+        desc: 'Full-featured serverless POST handler in Expo Router powered by Vercel AI SDK. Analyzes user prompts, dispatches to the requested model, and executes tools like render_ui_card (generative dynamic cards) and web_search (Tavily search). Streams response tokens back to client.',
+        files: [
+          'amogamobileds-v1/app/api/chat+api.ts'
+        ],
+        deps: ['ai', '@ai-sdk/google', '@ai-sdk/openai', '@ai-sdk/anthropic', 'zod'],
+        security: 'Zone 3: Edge Serverless Boundary. Securely holds third-party API keys (Gemini, OpenRouter, OpenAI, Tavily) on server side.'
+      },
+      'llm': {
+        name: '6. Multi-LLM Provider Engine',
+        category: 'EXTERNAL AI INFERENCE SERVICES',
+        desc: 'Universal AI provider connectivity supporting OpenRouter, Google Gemini (2.5-flash / 1.5-pro), OpenAI (GPT-4o), Anthropic (Claude 3.5), Groq (Llama 3.3 70B), and DeepSeek. Streams structured markdown and tool calls.',
+        files: [
+          'amogamobileds-v1/app/api/chat+api.ts',
+          'amogamobileds-v1/lib/ai-service.ts'
+        ],
+        deps: ['@ai-sdk/google', '@ai-sdk/openai', '@ai-sdk/anthropic'],
+        security: 'Zone 5: Third-Party External Boundary. Communicates over TLS with provider API endpoints using API keys.'
+      },
+      'tavily': {
+        name: '7. Tavily Web Search API',
+        category: 'EXTERNAL SEARCH & DATA SCRAPING',
+        desc: 'Live web search tool invoked by LLM function calling to retrieve fresh news articles, Times of India coverage, technical documentation, source URLs, favicons, and scraped image assets.',
+        files: [
+          'amogamobileds-v1/app/api/chat+api.ts'
+        ],
+        deps: ['fetch', 'Tavily Search REST API'],
+        security: 'Zone 5: External Service. Executed server-side only from the /api/chat route.'
+      },
+      'sb-auth': {
+        name: '8. Supabase Auth (GoTrue)',
+        category: 'MANAGED IDENTITY & TOKEN SERVICE',
+        desc: 'Cloud identity service providing email/password, magic link, and OAuth authentications. Fires PostgreSQL on_auth_user_created trigger on user signup to initialize public.profiles.',
+        files: [
+          'supabase.sql',
+          'amogamobileds-v1/lib/supabase.ts'
+        ],
+        deps: ['@supabase/supabase-js', 'PostgreSQL pg_crypto'],
+        security: 'Zone 4: Cloud Identity Boundary. Issues short-lived JWT access tokens and long-lived refresh tokens.'
+      },
+      'sb-db': {
+        name: '9. Supabase PostgreSQL (with RLS)',
+        category: 'DATABASE & PERSISTENCE LAYER',
+        desc: 'Core relational database with strict Row Level Security (RLS). Chat messages use an isolated user copy model (owner_user_id) to prevent cross-tenant data leakage. Includes triggers for automatic unread counters, push notifications, and RPC functions.',
+        files: [
+          'supabase.sql',
+          'amogamobileds-v1/lib/database.types.ts'
+        ],
+        deps: ['PostgreSQL 15+', 'PL/pgSQL triggers', 'Security Definer functions'],
+        security: 'Zone 4: Database Security Boundary. Every query is filtered through RLS policies (auth.uid() = owner_user_id).'
+      },
+      'sb-realtime': {
+        name: '10. Supabase Realtime (WebSockets)',
+        category: 'REALTIME PUBLICATION SUBSYSTEM',
+        desc: 'PostgreSQL logical replication listener broadcasting CDC (Change Data Capture) inserts and updates over WebSockets for tables: chat_messages, conversations, conversation_members, notifications, and profiles.',
+        files: [
+          'supabase.sql',
+          'amogamobileds-v1/lib/realtime.ts'
+        ],
+        deps: ['Supabase Realtime pg_publication', 'WebSocket RFC 6455'],
+        security: 'Zone 4: Respects RLS authorization tokens during client socket subscription.'
+      },
+      'storage': {
+        name: '11. Supabase Storage & Document Scanner',
+        category: 'BLOB STORAGE & ASSET MANAGEMENT',
+        desc: 'Encrypted object storage bucket (chat-files) hosting voice notes, uploaded photos, and enterprise scanned PDF documents (scanned/ folder) with OCR json payloads and metadata indexing.',
+        files: [
+          'supabase.sql',
+          'amogamobileds-v1/components/chat/document-scanner-modal.tsx'
+        ],
+        deps: ['Supabase Storage S3 backend', 'expo-image-picker', 'expo-file-system'],
+        security: 'Zone 4: Storage RLS Policies governing public reads and authenticated inserts.'
+      }
+    };
+
+    // Primary Flow Steps
+    const FLOW_STEPS = [
+      {
+        step: 1,
+        title: '1. User Input & Optimistic Local Cache',
+        desc: 'User sends a message or records voice in ChatArea. ChatService generates an optimistic record and writes it directly to Local SQLite DB (amoga_local.db) for 0ms UI latency.',
+        activeNodes: ['node-ui', 'node-sqlite', 'node-chat-svc'],
+        activeConnections: ['conn-2', 'conn-3'],
+        boundaryHighlight: 'client-boundary'
+      },
+      {
+        step: 2,
+        title: '2. Dispatch to Serverless AI API (/api/chat)',
+        desc: 'The client initiates a streaming POST request to /api/chat with the conversation context, user preferences, and selected model ID (Gemini / Claude / GPT / Groq).',
+        activeNodes: ['node-chat-svc', 'node-api-route'],
+        activeConnections: ['conn-4'],
+        boundaryHighlight: 'api-boundary'
+      },
+      {
+        step: 3,
+        title: '3. Multi-LLM Inference & Tool Execution',
+        desc: 'Expo Router API Route selects the provider SDK, evaluates tools (render_ui_card or live Tavily web search), and initiates token streaming via Vercel AI SDK streamText().',
+        activeNodes: ['node-api-route', 'node-llm', 'node-tavily'],
+        activeConnections: ['conn-5', 'conn-6'],
+        boundaryHighlight: 'ext-boundary'
+      },
+      {
+        step: 4,
+        title: '4. Streaming Response & Generative UI Render',
+        desc: 'Tokens and tool invocation payloads stream back to ChatArea. Generative UI cards or web search source pills render in real-time on the client.',
+        activeNodes: ['node-api-route', 'node-chat-svc', 'node-ui'],
+        activeConnections: ['conn-4'],
+        boundaryHighlight: 'client-boundary'
+      },
+      {
+        step: 5,
+        title: '5. Multi-Tenant Fanout in PostgreSQL (RLS)',
+        desc: 'ChatService inserts isolated message copies for every conversation member into Supabase PostgreSQL chat_messages. Triggers automatically compute unread counts and notifications.',
+        activeNodes: ['node-chat-svc', 'node-sb-db'],
+        activeConnections: ['conn-8'],
+        boundaryHighlight: 'db-boundary'
+      },
+      {
+        step: 6,
+        title: '6. Realtime CDC Broadcast & Sync',
+        desc: 'Postgres CDC broadcasts INSERT events via Supabase Realtime WebSockets to all recipient devices. The client applyChange() reducer merges changes smoothly.',
+        activeNodes: ['node-sb-db', 'node-sb-realtime', 'node-chat-svc', 'node-ui'],
+        activeConnections: ['conn-9', 'conn-10'],
+        boundaryHighlight: 'db-boundary'
+      }
+    ];
+
+    let currentStepIndex = 0;
+    let autoPlayInterval = null;
+    let boundariesVisible = true;
+
+    function init() {
+      renderComponentsList();
+      applyStep(0);
+    }
+
+    function renderComponentsList() {
+      const container = document.getElementById('components-quick-list');
+      container.innerHTML = '';
+      Object.keys(COMPONENTS).forEach(key => {
+        const item = COMPONENTS[key];
+        const btn = document.createElement('div');
+        btn.className = 'boundary-pill';
+        btn.style.padding = '6px 10px';
+        btn.innerHTML = `
+          <div style="font-size: 11.5px; font-weight: 600; color: #cbd5e1; flex: 1;">${item.name}</div>
+          <span style="font-size: 9.5px; color: var(--text-dim); font-family: 'Fira Code', monospace;">INFO →</span>
+        `;
+        btn.onclick = () => selectNode(key);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectNode(key) {
+      const comp = COMPONENTS[key];
+      if (!comp) return;
+
+      // Update Node highlights
+      document.querySelectorAll('.node-group').forEach(node => node.classList.remove('selected'));
+      const activeNode = document.getElementById(`node-${key}`);
+      if (activeNode) activeNode.classList.add('selected');
+
+      // Populate Inspector
+      document.getElementById('insp-title').innerText = comp.name;
+      document.getElementById('insp-category').innerText = comp.category;
+      document.getElementById('insp-desc').innerText = comp.desc;
+      document.getElementById('insp-security').innerText = comp.security;
+
+      // Files
+      const filesContainer = document.getElementById('insp-files');
+      filesContainer.innerHTML = comp.files.map(f => `
+        <div class="file-ref">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+          ${f}
+        </div>
+      `).join('');
+
+      // Deps
+      const depsContainer = document.getElementById('insp-deps');
+      depsContainer.innerHTML = comp.deps.map(d => `<span class="tech-tag">${d}</span>`).join('');
+
+      // Open Panel
+      document.getElementById('inspector-panel').classList.add('open');
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-panel').classList.remove('open');
+      document.querySelectorAll('.node-group').forEach(node => node.classList.remove('selected'));
+    }
+
+    function applyStep(index) {
+      currentStepIndex = index;
+      const step = FLOW_STEPS[index];
+
+      // Update Flow Sidebar Text
+      document.getElementById('flow-title').innerText = step.title;
+      document.getElementById('flow-counter').innerText = `Step ${step.step} of ${FLOW_STEPS.length}`;
+      document.getElementById('flow-desc').innerText = step.desc;
+
+      // Clear all active node classes
+      document.querySelectorAll('.node-group').forEach(el => el.classList.remove('flow-active'));
+      document.querySelectorAll('.connection-line').forEach(el => {
+        el.classList.remove('flow-highlight');
+        el.setAttribute('marker-end', 'url(#arrow)');
+      });
+
+      // Highlight active nodes
+      step.activeNodes.forEach(nodeId => {
+        const el = document.getElementById(nodeId);
+        if (el) el.classList.add('flow-active');
+      });
+
+      // Highlight active connection paths
+      step.activeConnections.forEach(connId => {
+        const el = document.getElementById(connId);
+        if (el) {
+          el.classList.add('flow-highlight');
+          el.setAttribute('marker-end', 'url(#arrow-active)');
+        }
+      });
+    }
+
+    function nextStep() {
+      let next = (currentStepIndex + 1) % FLOW_STEPS.length;
+      applyStep(next);
+    }
+
+    function prevStep() {
+      let prev = (currentStepIndex - 1 + FLOW_STEPS.length) % FLOW_STEPS.length;
+      applyStep(prev);
+    }
+
+    function toggleAutoPlay() {
+      const btn = document.getElementById('btn-autoplay');
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        btn.innerText = 'Auto';
+        btn.classList.remove('primary');
+      } else {
+        btn.innerText = 'Pause';
+        btn.classList.add('primary');
+        autoPlayInterval = setInterval(() => {
+          nextStep();
+        }, 3200);
+      }
+    }
+
+    function playFullFlow() {
+      applyStep(0);
+      if (!autoPlayInterval) {
+        toggleAutoPlay();
+      }
+    }
+
+    function resetView() {
+      if (autoPlayInterval) toggleAutoPlay();
+      closeInspector();
+      applyStep(0);
+    }
+
+    function toggleBoundaries() {
+      boundariesVisible = !boundariesVisible;
+      const boundaries = document.querySelectorAll('.svg-boundary, .svg-boundary-label');
+      boundaries.forEach(el => {
+        el.style.opacity = boundariesVisible ? '1' : '0.05';
+      });
+      const btn = document.getElementById('btn-toggle-boundaries');
+      if (boundariesVisible) {
+        btn.classList.remove('active');
+      } else {
+        btn.classList.add('active');
+      }
+    }
+
+    function highlightBoundary(zoneClass) {
+      // flash zone
+      const zones = ['zone-client', 'zone-api', 'zone-db', 'zone-ext'];
+      zones.forEach(z => {
+        const el = document.getElementById(z);
+        if (el) el.style.fillOpacity = '0.08';
+      });
+
+      let targetId = 'zone-client';
+      if (zoneClass.includes('api')) targetId = 'zone-api';
+      if (zoneClass.includes('db')) targetId = 'zone-db';
+      if (zoneClass.includes('ext')) targetId = 'zone-ext';
+
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.style.fillOpacity = '0.3';
+        setTimeout(() => {
+          targetEl.style.fillOpacity = '0.08';
+        }, 1200);
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

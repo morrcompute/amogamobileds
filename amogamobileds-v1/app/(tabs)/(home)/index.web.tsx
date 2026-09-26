@@ -61,6 +61,7 @@ import {
   ComingSoonView,
   CalendarAppView,
   EmailAppView,
+  NotificationsAppView,
   DEFAULT_NAV_ITEMS,
   app_menu_json,
 } from '../../../components/ui';
@@ -647,6 +648,8 @@ export default function WebPlaygroundScreen() {
               <CalendarAppView />
             ) : mainNavId === 'email' || mainNavId === 'mail' ? (
               <EmailAppView />
+            ) : mainNavId === 'notification' || mainNavId === 'notifications' || mainNavId === 'bell' ? (
+              <NotificationsAppView />
             ) : (
               <ComingSoonView
                 title={activeNavItem.label}
@@ -1199,6 +1202,8 @@ export default function WebPlaygroundScreen() {
             <CalendarAppView />
           ) : mainNavId === 'email' || mainNavId === 'mail' ? (
             <EmailAppView />
+          ) : mainNavId === 'notification' || mainNavId === 'notifications' || mainNavId === 'bell' ? (
+            <NotificationsAppView />
           ) : (
             <ComingSoonView
               title={activeNavItem.label}
