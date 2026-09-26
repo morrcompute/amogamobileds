@@ -201,3 +201,35 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.app_notification;
   END IF;
 END $$;
+
+-- ================================================================================
+-- USER PUSH TOKENS (FOR REAL-TIME EXPO MOBILE PUSH NOTIFICATIONS)
+-- ================================================================================
+
+CREATE TABLE IF NOT EXISTS public.user_push_tokens (
+  id bigserial PRIMARY KEY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_email text NOT NULL,
+  expo_push_token text NOT NULL UNIQUE,
+  device_type text,
+  device_name text,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS and grant access to user_push_tokens
+ALTER TABLE public.user_push_tokens ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all for user_push_tokens" ON public.user_push_tokens;
+CREATE POLICY "Allow all for user_push_tokens"
+  ON public.user_push_tokens
+  FOR ALL
+  TO public
+  USING (true)
+  WITH CHECK (true);
+
+-- Indexes for lightning-fast token lookups on send
+CREATE INDEX IF NOT EXISTS idx_user_push_tokens_email ON public.user_push_tokens (user_email);
+CREATE INDEX IF NOT EXISTS idx_user_push_tokens_user_id ON public.user_push_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_push_tokens_active ON public.user_push_tokens (is_active);
