@@ -1,6 +1,22 @@
 import { getLocalDatabase } from './sqlite-db';
 import type { AppNotificationRecord } from './types';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function ensureValidUuid(val?: string | null): string | null {
+  if (!val || typeof val !== 'string') return null;
+  const trimmed = val.trim();
+  return UUID_REGEX.test(trimmed) ? trimmed : null;
+}
+
+function generateV4Uuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 export class LocalNotificationService {
   /**
    * Create or save an app notification into local SQLite.
@@ -11,9 +27,7 @@ export class LocalNotificationService {
     const db = await getLocalDatabase();
     const nowIso = new Date().toISOString();
     const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
-    const notifUuid =
-      data.app_notification_uuid ||
-      `notif-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const notifUuid = ensureValidUuid(data.app_notification_uuid) || generateV4Uuid();
 
     const record: AppNotificationRecord = {
       app_notification_uuid: notifUuid,
