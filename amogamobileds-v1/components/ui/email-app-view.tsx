@@ -58,6 +58,11 @@ import {
   sendLiveEmail,
   getActiveEmailConfig,
 } from './email-client';
+import {
+  DocumentPreviewModal,
+  downloadOrShareFile,
+  type PreviewableFile,
+} from './document-preview-modal';
 
 export type EmailTabType = 'Inbox' | 'Sent' | 'Folder' | 'Contact' | 'Groups';
 
@@ -66,6 +71,10 @@ export interface EmailAttachment {
   name: string;
   type: string;
   size: string;
+  url?: string;
+  uri?: string;
+  content?: string;
+  contentType?: string;
 }
 
 export interface EmailMessageItem {
@@ -160,6 +169,7 @@ export function EmailAppView({
   const [composeSubject, setComposeSubject] = useState('');
   const [composeBody, setComposeBody] = useState('');
   const [composeAttachments, setComposeAttachments] = useState<EmailAttachment[]>([]);
+  const [previewAttachment, setPreviewAttachment] = useState<PreviewableFile | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState('Blank');
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
@@ -169,6 +179,32 @@ export function EmailAppView({
   const [isSendingLive, setIsSendingLive] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 20;
+
+  const handlePreviewAttachment = useCallback((att: EmailAttachment) => {
+    setPreviewAttachment({
+      id: att.id,
+      name: att.name,
+      url: att.url || att.uri,
+      uri: att.uri,
+      type: att.type,
+      size: att.size,
+      content: att.content,
+      contentType: att.contentType,
+    });
+  }, []);
+
+  const handleDownloadAttachment = useCallback(async (att: EmailAttachment) => {
+    await downloadOrShareFile({
+      id: att.id,
+      name: att.name,
+      url: att.url || att.uri,
+      uri: att.uri,
+      type: att.type,
+      size: att.size,
+      content: att.content,
+      contentType: att.contentType,
+    });
+  }, []);
 
   // Sync active from address from stored config
   useEffect(() => {
@@ -341,6 +377,9 @@ export function EmailAppView({
             name: asset.name || `document-${index + 1}.${ext.toLowerCase()}`,
             type: ext,
             size: sizeStr,
+            uri: asset.uri,
+            url: asset.uri,
+            mimeType: (asset as any).mimeType,
           };
         });
 
@@ -390,6 +429,9 @@ export function EmailAppView({
             name: asset.fileName || `image-${Date.now()}.${ext.toLowerCase()}`,
             type: ext,
             size: sizeStr,
+            uri: asset.uri,
+            url: asset.uri,
+            mimeType: asset.mimeType,
           };
         });
 
@@ -1053,14 +1095,14 @@ export function EmailAppView({
 
                       <View style={styles.attachmentActions}>
                         <TouchableOpacity
-                          onPress={() => alert(`Downloading ${att.name}...`)}
+                          onPress={() => handleDownloadAttachment(att)}
                           style={styles.attActionBtn}
                           accessibilityLabel="Download Attachment"
                         >
                           <Download size={15} color={textMuted} />
                         </TouchableOpacity>
                         <TouchableOpacity
-                          onPress={() => alert(`Previewing ${att.name}...`)}
+                          onPress={() => handlePreviewAttachment(att)}
                           style={styles.attActionBtn}
                           accessibilityLabel="Preview Attachment"
                         >
@@ -1360,14 +1402,14 @@ export function EmailAppView({
 
                         <View style={styles.attachmentActions}>
                           <TouchableOpacity
-                            onPress={() => alert(`Downloading ${att.name}...`)}
+                            onPress={() => handleDownloadAttachment(att)}
                             style={styles.attActionBtn}
                             accessibilityLabel="Download Attachment"
                           >
                             <Download size={15} color={textMuted} />
                           </TouchableOpacity>
                           <TouchableOpacity
-                            onPress={() => alert(`Previewing ${att.name}...`)}
+                            onPress={() => handlePreviewAttachment(att)}
                             style={styles.attActionBtn}
                             accessibilityLabel="Preview Attachment"
                           >
@@ -1467,6 +1509,14 @@ export function EmailAppView({
           </View>
         )}
       </View>
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        visible={!!previewAttachment}
+        file={previewAttachment}
+        onClose={() => setPreviewAttachment(null)}
+        onDownload={(file) => downloadOrShareFile(file)}
+      />
     </View>
   );
 }

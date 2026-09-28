@@ -196,10 +196,10 @@ export class LocalNotificationService {
       ]
     );
 
-    const savedRecord = await db.getFirstAsync<AppNotificationRecord>(
+    const savedRecord = (await db.getFirstAsync(
       `SELECT * FROM app_notification WHERE app_notification_uuid = ? LIMIT 1`,
       [notifUuid]
-    );
+    )) as AppNotificationRecord | null;
 
     return savedRecord || record;
   }

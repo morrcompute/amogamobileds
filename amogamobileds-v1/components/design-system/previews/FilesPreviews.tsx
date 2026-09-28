@@ -49,6 +49,11 @@ import {
   LayoutGrid,
 } from 'lucide-react-native';
 import { useTheme } from '../../../providers/theme-provider';
+import {
+  DocumentPreviewModal,
+  downloadOrShareFile,
+  type PreviewableFile,
+} from '../../ui/document-preview-modal';
 import type { GalleryEntry } from '../../types';
 
 interface AttachedFile {
@@ -136,6 +141,7 @@ export function FileManagerViewPreview({ stateIndex = 0 }: { stateIndex?: number
   const [activeCategory, setActiveCategory] = useState('All Files');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewCardMode, setViewCardMode] = useState(true);
+  const [previewFile, setPreviewFile] = useState<PreviewableFile | null>(null);
 
   const categories = [
     'All Files',
@@ -420,7 +426,16 @@ export function FileManagerViewPreview({ stateIndex = 0 }: { stateIndex?: number
                 {/* Card Action Buttons */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
                   <TouchableOpacity
-                    onPress={() => alert(`Previewing ${file.name}...`)}
+                    onPress={() =>
+                      setPreviewFile({
+                        id: file.id,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        category: file.category,
+                        path: file.path,
+                      })
+                    }
                     style={[
                       styles.previewBtnPill,
                       { backgroundColor: isDark ? '#312e81' : '#ede9fe' },
@@ -434,13 +449,31 @@ export function FileManagerViewPreview({ stateIndex = 0 }: { stateIndex?: number
 
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                     <TouchableOpacity
-                      onPress={() => alert(`Downloading ${file.name}...`)}
+                      onPress={() =>
+                        downloadOrShareFile({
+                          id: file.id,
+                          name: file.name,
+                          type: file.type,
+                          size: file.size,
+                          category: file.category,
+                          path: file.path,
+                        })
+                      }
                       style={styles.actionIconBtn}
                     >
                       <Download size={14} color={textMuted} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                      onPress={() => alert(`More options for ${file.name}`)}
+                      onPress={() =>
+                        downloadOrShareFile({
+                          id: file.id,
+                          name: file.name,
+                          type: file.type,
+                          size: file.size,
+                          category: file.category,
+                          path: file.path,
+                        })
+                      }
                       style={styles.actionIconBtn}
                     >
                       <MoreVertical size={14} color={textMuted} />
@@ -452,6 +485,14 @@ export function FileManagerViewPreview({ stateIndex = 0 }: { stateIndex?: number
           </View>
         </View>
       </View>
+
+      {/* Document Preview Modal */}
+      <DocumentPreviewModal
+        visible={!!previewFile}
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
+        onDownload={(f) => downloadOrShareFile(f)}
+      />
     </View>
   );
 }

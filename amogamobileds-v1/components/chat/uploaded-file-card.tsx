@@ -16,12 +16,19 @@ import {
   Check,
 } from 'lucide-react-native';
 import { useTheme } from '../../providers/theme-provider';
+import {
+  DocumentPreviewModal,
+  downloadOrShareFile,
+  type PreviewableFile,
+} from '../ui/document-preview-modal';
 
 export interface UploadedFileCardProps {
   fileName?: string;
   fileSize?: string;
   fileType?: string;
   extension?: string;
+  url?: string;
+  fileUrl?: string;
   onPreview?: () => void;
   onDownload?: () => void;
 }
@@ -31,6 +38,8 @@ export function UploadedFileCard({
   fileSize = '3.6 MB',
   fileType = 'CSV',
   extension = 'csv',
+  url,
+  fileUrl,
   onPreview,
   onDownload,
 }: UploadedFileCardProps) {
@@ -39,6 +48,9 @@ export function UploadedFileCard({
 
   const [downloaded, setDownloaded] = useState(false);
   const [previewActive, setPreviewActive] = useState(false);
+  const [internalPreviewOpen, setInternalPreviewOpen] = useState(false);
+
+  const effectiveUrl = fileUrl || url;
 
   const cardBg = isDark ? '#121216' : '#ffffff';
   const borderColor = isDark ? '#27272a' : '#e4e4e7';
@@ -93,15 +105,28 @@ export function UploadedFileCard({
   const badge = getBadgeStyle();
   const IconComp = badge.Icon;
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setDownloaded(true);
-    onDownload?.();
+    if (onDownload) {
+      onDownload();
+    } else {
+      await downloadOrShareFile({
+        name: fileName,
+        url: effectiveUrl,
+        type: fileType,
+        size: fileSize,
+      });
+    }
     setTimeout(() => setDownloaded(false), 2000);
   };
 
   const handlePreview = () => {
     setPreviewActive(true);
-    onPreview?.();
+    if (onPreview) {
+      onPreview();
+    } else {
+      setInternalPreviewOpen(true);
+    }
     setTimeout(() => setPreviewActive(false), 1500);
   };
 
@@ -175,6 +200,26 @@ export function UploadedFileCard({
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Internal Document Preview Modal */}
+      <DocumentPreviewModal
+        visible={internalPreviewOpen}
+        file={{
+          name: fileName,
+          url: effectiveUrl,
+          type: fileType,
+          size: fileSize,
+        }}
+        onClose={() => setInternalPreviewOpen(false)}
+        onDownload={() =>
+          downloadOrShareFile({
+            name: fileName,
+            url: effectiveUrl,
+            type: fileType,
+            size: fileSize,
+          })
+        }
+      />
     </View>
   );
 }

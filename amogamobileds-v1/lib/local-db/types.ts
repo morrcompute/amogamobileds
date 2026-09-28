@@ -847,4 +847,6 @@ export interface AppNotificationRecord {
   period_uuid?: string | null;
   period_id?: number | null;
   period_name?: string | null;
+  created_at?: string | null;
+  attachments?: any;
 }
