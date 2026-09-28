@@ -76,7 +76,7 @@ const INITIAL_EMAIL_ACCOUNTS: EmailAccountItem[] = [
   {
     id: 'email-hostinger-1',
     email: 'ask@morrai.com',
-    password: '0un:ZX3JOs&E',
+    password: '',
     protocol: 'IMAP',
     incomingServer: 'imap.hostinger.com',
     incomingPort: 993,
@@ -244,7 +244,7 @@ export function EmailSettingPreview({ stateIndex = 0 }: { stateIndex?: number })
 
   const [formData, setFormData] = useState({
     email: 'ask@morrai.com',
-    password: '0un:ZX3JOs&E',
+    password: '',
     protocol: 'IMAP' as 'IMAP' | 'POP3',
     incomingServer: 'imap.hostinger.com',
     incomingPort: '993',
